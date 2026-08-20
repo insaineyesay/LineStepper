@@ -4,8 +4,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient } from '@supabase/supabase-js';
 import { AppState, Platform } from 'react-native';
 
-const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+// `|| undefined` also catches empty strings — some CI builds inline missing
+// env vars as '' rather than undefined, which must not reach createClient.
+const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || undefined;
+const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || undefined;
 
 /**
  * True once .env contains real Supabase credentials. Screens fall back to
