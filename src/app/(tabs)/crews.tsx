@@ -1,5 +1,6 @@
+import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { FlatList, StyleSheet } from 'react-native';
+import { FlatList, Pressable, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
@@ -39,9 +40,10 @@ const SAMPLE_CREWS: Crew[] = [
   },
 ];
 
-function CrewCard({ crew }: { crew: Crew }) {
+function CrewCard({ crew, onPress }: { crew: Crew; onPress: () => void }) {
   return (
-    <ThemedView type="backgroundElement" style={styles.card}>
+    <Pressable onPress={onPress} style={({ pressed }) => pressed && styles.pressed}>
+      <ThemedView type="backgroundElement" style={styles.card}>
       <ThemedView type="backgroundElement" style={styles.cardHeader}>
         <ThemedText type="default">{crew.name}</ThemedText>
         {crew.tier === 'featured' && <ThemedText type="small">★ Featured</ThemedText>}
@@ -54,11 +56,13 @@ function CrewCard({ crew }: { crew: Crew }) {
       {crew.is_joinable && (
         <ThemedText type="smallBold">Accepting new members</ThemedText>
       )}
-    </ThemedView>
+      </ThemedView>
+    </Pressable>
   );
 }
 
 export default function CrewsScreen() {
+  const router = useRouter();
   const [crews, setCrews] = useState<Crew[]>(SAMPLE_CREWS);
   const [usingSampleData, setUsingSampleData] = useState(true);
 
@@ -96,7 +100,14 @@ export default function CrewsScreen() {
         <FlatList
           data={crews}
           keyExtractor={(item) => item.id}
-          renderItem={({ item }) => <CrewCard crew={item} />}
+          renderItem={({ item }) => (
+            <CrewCard
+              crew={item}
+              onPress={() =>
+                router.push({ pathname: '/crew/[id]', params: { id: item.id } })
+              }
+            />
+          )}
           contentContainerStyle={styles.list}
         />
       </SafeAreaView>
@@ -130,5 +141,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+  },
+  pressed: {
+    opacity: 0.7,
   },
 });

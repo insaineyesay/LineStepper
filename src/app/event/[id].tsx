@@ -16,8 +16,13 @@ import { isSupabaseConfigured, supabase } from '@/lib/supabase';
 import type { DanceEvent } from '@/lib/types';
 
 interface EventDetail extends DanceEvent {
-  organizer: { display_name: string | null; handle: string | null; role: string } | null;
-  crew: { name: string; slug: string } | null;
+  organizer: {
+    id: string;
+    display_name: string | null;
+    handle: string | null;
+    role: string;
+  } | null;
+  crew: { id: string; name: string; slug: string } | null;
   metro: { name: string; state: string } | null;
 }
 
@@ -48,7 +53,7 @@ export default function EventDetailScreen() {
     const { data, error } = await supabase
       .from('events')
       .select(
-        '*, organizer:profiles!events_organizer_id_fkey(display_name, handle, role), crew:crews(name, slug), metro:metros(name, state)'
+        '*, organizer:profiles!events_organizer_id_fkey(id, display_name, handle, role), crew:crews(id, name, slug), metro:metros(name, state)'
       )
       .eq('id', id)
       .single();
@@ -158,11 +163,29 @@ export default function EventDetailScreen() {
             <ThemedText type="small" themeColor="textSecondary">
               Hosted by
             </ThemedText>
-            <ThemedText type="default">{organizerName}</ThemedText>
+            <Pressable
+              disabled={!event.organizer}
+              onPress={() =>
+                event.organizer &&
+                router.push({
+                  pathname: '/member/[id]',
+                  params: { id: event.organizer.id },
+                })
+              }>
+              <ThemedText type="default">{organizerName}</ThemedText>
+            </Pressable>
             {event.crew && (
-              <ThemedText type="small" themeColor="textSecondary">
-                with {event.crew.name}
-              </ThemedText>
+              <Pressable
+                onPress={() =>
+                  router.push({
+                    pathname: '/crew/[id]',
+                    params: { id: event.crew!.id },
+                  })
+                }>
+                <ThemedText type="small" themeColor="textSecondary">
+                  with <ThemedText type="smallBold">{event.crew.name}</ThemedText>
+                </ThemedText>
+              </Pressable>
             )}
           </ThemedView>
 
