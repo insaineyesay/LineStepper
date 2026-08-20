@@ -276,6 +276,7 @@ const styles = StyleSheet.create({
   },
   chipScroll: {
     flexGrow: 0,
+    flexShrink: 0,
   },
   chipRow: {
     gap: Spacing.two,
