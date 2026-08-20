@@ -1,0 +1,59 @@
+import { useRouter } from 'expo-router';
+import { ScrollView, StyleSheet } from 'react-native';
+
+import { EventForm } from '@/components/event-form';
+import { ThemedText } from '@/components/themed-text';
+import { ThemedView } from '@/components/themed-view';
+import { MaxContentWidth, Spacing } from '@/constants/theme';
+import { useSession } from '@/lib/auth-context';
+
+export default function NewEventScreen() {
+  const router = useRouter();
+  const { session } = useSession();
+
+  return (
+    <ThemedView style={styles.container}>
+      <ScrollView contentContainerStyle={styles.scroll}>
+        <ThemedView style={styles.content}>
+          {session ? (
+            <EventForm
+              userId={session.user.id}
+              onSaved={(id) =>
+                router.replace({ pathname: '/event/[id]', params: { id } })
+              }
+            />
+          ) : (
+            <ThemedView type="backgroundElement" style={styles.card}>
+              <ThemedText type="smallBold">Sign in to post events</ThemedText>
+              <ThemedText type="small" themeColor="textSecondary">
+                Head to the Profile tab to sign in first — then come back here to
+                post your event.
+              </ThemedText>
+            </ThemedView>
+          )}
+        </ThemedView>
+      </ScrollView>
+    </ThemedView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  scroll: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+  },
+  content: {
+    flex: 1,
+    maxWidth: MaxContentWidth,
+    padding: Spacing.four,
+    gap: Spacing.three,
+  },
+  card: {
+    borderRadius: Spacing.three,
+    padding: Spacing.three,
+    gap: Spacing.one,
+  },
+});
