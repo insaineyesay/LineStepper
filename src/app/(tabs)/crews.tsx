@@ -1,5 +1,5 @@
-import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { useCallback, useState } from 'react';
 import { FlatList, Pressable, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -66,27 +66,30 @@ export default function CrewsScreen() {
   const [crews, setCrews] = useState<Crew[]>(SAMPLE_CREWS);
   const [usingSampleData, setUsingSampleData] = useState(true);
 
-  useEffect(() => {
-    if (!isSupabaseConfigured) {
-      return;
-    }
-    let cancelled = false;
-    supabase
-      .from('crews')
-      .select('*')
-      .order('tier', { ascending: false })
-      .order('name')
-      .limit(100)
-      .then(({ data, error }) => {
-        if (!cancelled && !error && data) {
-          setCrews(data);
-          setUsingSampleData(false);
-        }
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  // Refetch every time the tab gains focus so new crews appear.
+  useFocusEffect(
+    useCallback(() => {
+      if (!isSupabaseConfigured) {
+        return;
+      }
+      let cancelled = false;
+      supabase
+        .from('crews')
+        .select('*')
+        .order('tier', { ascending: false })
+        .order('name')
+        .limit(100)
+        .then(({ data, error }) => {
+          if (!cancelled && !error && data) {
+            setCrews(data);
+            setUsingSampleData(false);
+          }
+        });
+      return () => {
+        cancelled = true;
+      };
+    }, [])
+  );
 
   return (
     <ThemedView style={styles.container}>

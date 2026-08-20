@@ -1,5 +1,5 @@
-import { useRouter } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { useCallback, useMemo, useState } from 'react';
 import { FlatList, Pressable, ScrollView, StyleSheet, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -111,37 +111,40 @@ export default function EventsScreen() {
     cutoff: number | null;
   }>({ key: 'all', cutoff: null });
 
-  useEffect(() => {
-    if (!isSupabaseConfigured) {
-      return;
-    }
-    let cancelled = false;
-    supabase
-      .from('events')
-      .select('*')
-      .eq('status', 'published')
-      .gte('starts_at', new Date().toISOString())
-      .order('starts_at', { ascending: true })
-      .limit(100)
-      .then(({ data, error }) => {
-        if (!cancelled && !error && data) {
-          setEvents(data);
-          setUsingSampleData(false);
-        }
-      });
-    supabase
-      .from('metros')
-      .select('*')
-      .order('id')
-      .then(({ data }) => {
-        if (!cancelled && data) {
-          setMetros(data);
-        }
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  // Refetch every time the tab gains focus so freshly posted events appear.
+  useFocusEffect(
+    useCallback(() => {
+      if (!isSupabaseConfigured) {
+        return;
+      }
+      let cancelled = false;
+      supabase
+        .from('events')
+        .select('*')
+        .eq('status', 'published')
+        .gte('starts_at', new Date().toISOString())
+        .order('starts_at', { ascending: true })
+        .limit(100)
+        .then(({ data, error }) => {
+          if (!cancelled && !error && data) {
+            setEvents(data);
+            setUsingSampleData(false);
+          }
+        });
+      supabase
+        .from('metros')
+        .select('*')
+        .order('id')
+        .then(({ data }) => {
+          if (!cancelled && data) {
+            setMetros(data);
+          }
+        });
+      return () => {
+        cancelled = true;
+      };
+    }, [])
+  );
 
   const visibleEvents = useMemo(() => {
     const q = search.trim().toLowerCase();
