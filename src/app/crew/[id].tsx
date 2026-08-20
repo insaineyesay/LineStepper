@@ -219,7 +219,19 @@ export default function CrewDetailScreen() {
           ) : myMembership?.status === 'active' ? (
             <ThemedView type="backgroundElement" style={styles.card}>
               <ThemedText type="smallBold">✓ You&apos;re a member</ThemedText>
-              {!isOwner && (
+              {isOwner ? (
+                <Pressable
+                  onPress={() =>
+                    router.push({
+                      pathname: '/crew/edit/[id]',
+                      params: { id: crew.id },
+                    })
+                  }>
+                  <ThemedText type="small" themeColor="textSecondary">
+                    Edit crew
+                  </ThemedText>
+                </Pressable>
+              ) : (
                 <Pressable onPress={leaveOrCancel}>
                   <ThemedText type="small" themeColor="textSecondary">
                     Leave crew

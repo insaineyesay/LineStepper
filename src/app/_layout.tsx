@@ -27,6 +27,14 @@ export default function RootLayout() {
             options={{ headerShown: true, title: 'Crew' }}
           />
           <Stack.Screen
+            name="crew/new"
+            options={{ headerShown: true, title: 'Start a crew' }}
+          />
+          <Stack.Screen
+            name="crew/edit/[id]"
+            options={{ headerShown: true, title: 'Edit crew' }}
+          />
+          <Stack.Screen
             name="member/[id]"
             options={{ headerShown: true, title: 'Profile' }}
           />

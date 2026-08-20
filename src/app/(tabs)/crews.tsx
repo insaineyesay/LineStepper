@@ -3,9 +3,11 @@ import { useCallback, useState } from 'react';
 import { FlatList, Pressable, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { Button } from '@/components/button';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { useSession } from '@/lib/auth-context';
 import { isSupabaseConfigured, supabase } from '@/lib/supabase';
 import type { Crew } from '@/lib/types';
 
@@ -63,6 +65,7 @@ function CrewCard({ crew, onPress }: { crew: Crew; onPress: () => void }) {
 
 export default function CrewsScreen() {
   const router = useRouter();
+  const { session } = useSession();
   const [crews, setCrews] = useState<Crew[]>(SAMPLE_CREWS);
   const [usingSampleData, setUsingSampleData] = useState(true);
 
@@ -99,6 +102,9 @@ export default function CrewsScreen() {
           <ThemedText type="small" themeColor="textSecondary">
             Showing sample crews — connect Supabase in .env to load real data.
           </ThemedText>
+        )}
+        {session && (
+          <Button label="+ Start a crew" onPress={() => router.push('/crew/new')} />
         )}
         <FlatList
           data={crews}
