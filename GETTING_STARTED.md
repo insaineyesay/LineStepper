@@ -39,8 +39,12 @@ Skip this if someone has already done it for the project you're using.
    crews.
 4. Make sign-in emails contain a code. The app signs you in with a 6-digit
    code, but Supabase's default email sends a link instead.
-   - Go to **Authentication → Emails → Magic Link** and add `{{ .Token }}` to
-     the template. For example: `Your LineStepper code is {{ .Token }}`.
+   - Go to **Authentication → Emails → Templates**. Edit both **Magic Link**
+     (returning users) and **Confirm signup** (a user's first sign-in): replace
+     `{{ .ConfirmationURL }}` with `{{ .Token }}`. For example:
+     `Your LineStepper code is {{ .Token }}`.
+   - Under **Authentication → Sign In / Providers → Email**, check that
+     **Email OTP Length** is `6`.
 
 ## 4. Create your env files
 
@@ -201,7 +205,8 @@ released support yet:
 | Problem | Fix |
 | --- | --- |
 | `relation "public.profiles" does not exist` | Migrations weren't run, or were run out of order. Run 0001 → 0002 → 0003. |
-| Sign-in email has a link, not a code | Add `{{ .Token }}` to the Magic Link email template (step 3). |
+| Sign-in email has a link, not a code | Add `{{ .Token }}` to both the Magic Link and Confirm signup email templates (step 3). |
+| `fetch failed: A server with the specified hostname could not be found` | The Supabase URL in `apps/mobile/.env` doesn't exist. The project is probably paused (restore it in the dashboard) or was replaced. Copy the current URL and key from the project's **Connect** button. |
 | "Email rate limit exceeded" | Supabase's built-in email sender allows only a few emails an hour. Wait, or set up custom SMTP (we plan to use Resend). |
 | App says "Backend not connected" | `apps/mobile/.env` is missing or empty. Fill it in and restart Expo. |
 | Signed in, but the API returns 401 | Your Supabase project uses the legacy JWT secret. Copy it from **Project Settings → JWT Keys** into `SUPABASE_JWT_SECRET` in `apps/api/.env`. |
