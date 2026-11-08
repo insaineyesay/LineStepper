@@ -6,7 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '@/components/button';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { BottomTabInset, MaxContentWidth, Spacing, TabRootTopInset } from '@/constants/theme';
 import { useSession } from '@/lib/auth-context';
 import { isSupabaseConfigured, supabase } from '@/lib/supabase';
 import type { Crew } from '@/lib/types';
@@ -134,7 +134,7 @@ const styles = StyleSheet.create({
     flex: 1,
     maxWidth: MaxContentWidth,
     paddingHorizontal: Spacing.four,
-    paddingTop: Spacing.six,
+    paddingTop: TabRootTopInset,
     gap: Spacing.three,
   },
   list: {

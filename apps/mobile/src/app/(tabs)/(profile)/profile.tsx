@@ -13,7 +13,7 @@ import { Button } from '@/components/button';
 import { Chip } from '@/components/chip';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { BottomTabInset, MaxContentWidth, Spacing, TabRootTopInset } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useSession } from '@/lib/auth-context';
 import { logTap } from '@/lib/log-tap';
@@ -442,7 +442,7 @@ const styles = StyleSheet.create({
     flex: 1,
     maxWidth: MaxContentWidth,
     paddingHorizontal: Spacing.four,
-    paddingTop: Spacing.six,
+    paddingTop: TabRootTopInset,
   },
   scroll: {
     gap: Spacing.three,
