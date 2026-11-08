@@ -42,3 +42,9 @@ example
 # generated native folders
 /ios
 /android
+
+# monorepo
+.next/
+next-env.d.ts
+apps/api/dist/
+apps/*/.env
