@@ -62,4 +62,9 @@ export const Spacing = {
 } as const;
 
 export const BottomTabInset = Platform.select({ ios: 50, android: 80 }) ?? 0;
+/**
+ * Top padding for the tab root screens (Events, Crews, Profile). On web the tab
+ * bar sits above the content (components/app-tabs.web.tsx), so less is needed.
+ */
+export const TabRootTopInset = Platform.select({ web: Spacing.three, default: Spacing.six });
 export const MaxContentWidth = 800;

@@ -15,21 +15,24 @@ import { MaxContentWidth, Spacing } from '@/constants/theme';
 
 export default function AppTabs() {
   return (
-    <Tabs>
-      <TabSlot style={{ height: '100%' }} />
+    // The tab bar sits above the content (not floating over it) so inner
+    // screens' headers and back buttons are never hidden behind it.
+    <Tabs style={styles.tabs}>
       <TabList asChild>
         <CustomTabList>
-          <TabTrigger name="index" href="/" asChild>
+          {/* resetOnFocus: clicking a tab always opens its first screen (Events list, Crews list, Profile). */}
+          <TabTrigger name="(browse)" href="/" resetOnFocus asChild>
             <TabButton>Events</TabButton>
           </TabTrigger>
-          <TabTrigger name="crews" href="/crews" asChild>
+          <TabTrigger name="(crews)" href="/crews" resetOnFocus asChild>
             <TabButton>Crews</TabButton>
           </TabTrigger>
-          <TabTrigger name="profile" href="/profile" asChild>
+          <TabTrigger name="(profile)" href="/profile" resetOnFocus asChild>
             <TabButton>Profile</TabButton>
           </TabTrigger>
         </CustomTabList>
       </TabList>
+      <TabSlot style={styles.slot} />
     </Tabs>
   );
 }
@@ -68,8 +71,13 @@ export function CustomTabList(props: TabListProps) {
 }
 
 const styles = StyleSheet.create({
+  tabs: {
+    flex: 1,
+  },
+  slot: {
+    flex: 1,
+  },
   tabListContainer: {
-    position: 'absolute',
     width: '100%',
     padding: Spacing.three,
     justifyContent: 'center',
