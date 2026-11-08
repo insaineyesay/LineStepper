@@ -17,6 +17,7 @@ import { BottomTabInset, MaxContentWidth, Spacing, TabRootTopInset } from '@/con
 import { useTheme } from '@/hooks/use-theme';
 import { useSession } from '@/lib/auth-context';
 import { logTap } from '@/lib/log-tap';
+import { unregisterPushAsync } from '@/lib/push';
 import { authClient } from '@/lib/auth';
 import { isSupabaseConfigured, supabase } from '@/lib/supabase';
 import type { Metro, Profile, ProfileRole } from '@/lib/types';
@@ -167,8 +168,8 @@ function BookmarksCard({ userId }: { userId: string }) {
       <ThemedText type="smallBold">My bookmarked events</ThemedText>
       {bookmarks.length === 0 ? (
         <ThemedText type="small" themeColor="textSecondary">
-          Bookmark events from the calendar and they&apos;ll show up here — with
-          reminders coming soon.
+          Bookmark events from the calendar and they&apos;ll show up here. In the
+          app, you&apos;ll get a reminder about a day before each one.
         </ThemedText>
       ) : (
         bookmarks.map((bookmark) => (
@@ -393,7 +394,14 @@ function ProfileEditor({ userId, email }: { userId: string; email: string | unde
 
       <MyEventsCard userId={userId} />
 
-      <Pressable onPress={() => logTap('sign_out', () => void authClient.signOut())}>
+      <Pressable
+        onPress={() =>
+          logTap('sign_out', async () => {
+            // Stop reminders reaching this phone before the session goes away.
+            await unregisterPushAsync();
+            await authClient.signOut();
+          })
+        }>
         <ThemedText type="small" themeColor="textSecondary" style={styles.signOut}>
           Sign out
         </ThemedText>

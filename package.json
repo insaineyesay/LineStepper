@@ -16,7 +16,8 @@
     "start": "npm run start -w @linestepper/api",
     "heroku-postbuild": "npm run build:api",
     "typecheck": "npm run typecheck --workspaces --if-present",
-    "test": "npm run test --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present && npm run test:functions",
+    "test:functions": "vitest run --root supabase/functions",
     "lint": "npm run lint --workspaces --if-present"
   },
   "overrides": {

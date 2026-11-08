@@ -51,5 +51,8 @@ export const LogEvents = {
   flagChanged: 'flags.changed',
   flagDenied: 'flags.denied',
   logsDropped: 'logs.dropped',
+  pushRegistered: 'push.registered',
+  pushRegisterFailed: 'push.register_failed',
+  pushOpened: 'push.opened',
   unhandledError: 'error.unhandled',
 } as const;
