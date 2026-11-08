@@ -7,10 +7,16 @@ import { randomId } from './ids';
 
 export const API_URL = process.env.EXPO_PUBLIC_API_URL || undefined;
 
-let getAccessToken: () => Promise<string | undefined> = async () => undefined;
+// Kept on an object, not a module-level `let`: when EXPO_PUBLIC_API_URL is
+// unset, the production minifier drops httpBatchTransport and with it the
+// `let` declaration, but keeps the assignment in configureLogAuth, which then
+// throws "getAccessToken is not defined" and blanks the whole app.
+const logAuth: { getAccessToken: () => Promise<string | undefined> } = {
+  getAccessToken: async () => undefined,
+};
 /** Called by the auth layer so log uploads carry the user's token (server sets userId from it). */
 export function configureLogAuth(getter: () => Promise<string | undefined>) {
-  getAccessToken = getter;
+  logAuth.getAccessToken = getter;
 }
 
 /**
@@ -27,7 +33,7 @@ function httpBatchTransport(url: string, { maxBatch = 20, intervalMs = 5000, max
     const batch = queue.slice(0, 100);
     sending = (async () => {
       try {
-        const token = await getAccessToken();
+        const token = await logAuth.getAccessToken();
         const res = await fetch(`${url}/logs`, {
           method: 'POST',
           headers: {
