@@ -4,37 +4,94 @@ The hub for the soul line dancing community — events, crews, DJs, instructors,
 and vendors in one place. Launch region: Hampton Roads, Richmond, and North
 Carolina.
 
-## Stack
+## Repo layout (npm workspaces)
 
-- **App**: [Expo](https://expo.dev) (SDK 57) + expo-router, TypeScript. One
-  codebase for iOS, Android, and web.
-- **Backend**: [Supabase](https://supabase.com) — Postgres, auth (Apple /
-  Google / Facebook sign-in), storage, row-level security.
-- **Billing** (planned): Stripe subscriptions managed through a separate web
-  dashboard, not in-app purchases.
+| Path | What it is |
+| --- | --- |
+| `apps/mobile` | Expo (SDK 58) + expo-router app for iOS, Android and web. |
+| `apps/api` | Node API (Fastify) for Heroku: feature flags, client log ingest, and later the domain modules. |
+| `apps/web` | Next.js creator dashboard and admin back office (placeholder for now). |
+| `packages/shared` | Code every app imports: the flag registry, the logger contract and the auth contract. |
+| `supabase/migrations` | Database schema, RLS policies and triggers. |
+
+Backend data lives in [Supabase](https://supabase.com) (Postgres, auth, storage, row-level security).
 
 ## Getting started
 
+Full local setup, including the database, env files, running on a phone and
+troubleshooting: **[GETTING_STARTED.md](GETTING_STARTED.md)**. Short version:
+
 ```bash
-npm install
-npm start          # then press i (iOS), a (Android), or w (web)
+npm install                  # once, at the repo root (installs every workspace)
+cp apps/mobile/.env.example apps/mobile/.env
+cp apps/api/.env.example apps/api/.env
+npm run dev:api              # API on :4000
+npm run dev:mobile           # Expo; press i / a / w
+npm run dev:web              # dashboard on :3000
+npm test                     # shared + api unit tests
+npm run typecheck
 ```
 
-The app runs with sample data out of the box. To connect the real backend:
+The mobile app still runs with sample data and no API: flags fall back to
+their defaults and logs go to the console.
 
-1. Create a project at [database.new](https://database.new).
-2. Run `supabase/migrations/0001_initial_schema.sql` in the SQL editor
-   (or `supabase db push` with the Supabase CLI).
-3. `cp .env.example .env` and fill in the project URL and anon key.
-4. Restart the dev server.
+To connect Supabase, run the migrations in `supabase/migrations` in order,
+then fill in the env files. To make someone an admin (needed to change
+flags), run this in the SQL editor:
+`update profiles set is_admin = true where id = '<user id>';`
 
-## Project layout
+## Foundations (PRD Addendum B)
 
-- `src/app/` — screens (expo-router file-based routing): Events (`index`),
-  Crews, Profile.
-- `src/lib/supabase.ts` — Supabase client; `src/lib/types.ts` — row types
-  (replace with generated types once the project exists).
-- `supabase/migrations/` — database schema, RLS policies, and signup trigger.
+**Feature flags** (`packages/shared/src/flags/registry.ts`). Every flag from
+B2 is declared once, with its MVP1 default and its dependencies (for example,
+`tickets.qr` needs `booking`). The API resolves the effective value in this
+order: registry default → `FLAGS` env var (set at deploy) → `feature_flags`
+table (changed by admins at runtime). The API enforces flags: a route behind
+`app.requireFlag('booking')` returns 404 while the flag is off. The app calls
+`useFlag('booking')` only to hide UI.
+
+- `GET /flags` returns the effective flags.
+- `PUT /admin/flags/:key {enabled}` is admin-only. Each change is written to
+  `flag_audit` and logged as `flags.changed`.
+
+**Logging** (`packages/shared/src/logging`, `apps/api/src/logging`).
+
+- App code only calls `logger.info(event, data)`. Vendors sit behind
+  connectors.
+- The mobile app batches events to `POST /logs`. The API sets the user ID from
+  the bearer token and uses the request ID.
+- The server log bus removes personal data, adds context, batches, and sends
+  each batch to every enabled connector.
+- Connectors:
+  - **stdout** (Pino JSON, always on; shows in `heroku logs`)
+  - **Papertrail** (HTTPS, `PAPERTRAIL_TOKEN`)
+  - **Sentry** (warnings and errors, `SENTRY_DSN`)
+- Each connector has its own `log.connector.*` flag. A connector that is
+  failing retries, then drops the batch and counts it (see `GET /health`). It
+  never blocks the app or the other connectors.
+- To add a vendor, write a `LogConnector` (`init`, `send`, `flush`, `health`)
+  and add it in `buildConnectors`.
+- Every API request logs `api.request`. Screen views, app start and
+  background, sign-in and sign-out, and taps on `Button` and `Chip` (or any
+  `onPress` wrapped in `logTap`) are logged from the app.
+
+**Auth** (`packages/shared/src/auth`).
+
+- Screens use `useSession()`, which exposes an `AuthClient`. Only
+  `apps/mobile/src/lib/auth/supabase-auth-client.ts` talks to Supabase Auth.
+- On the server, an `AuthVerifier` turns a bearer token into a user.
+  `AUTH_PROVIDER` selects it.
+- To add Clerk, Auth0 or our own auth API, write one adapter for each side
+  and change one line in each `index.ts`.
+
+## Deploying
+
+- **API (Heroku):** the root `Procfile` and the `heroku-postbuild` script
+  build and start `apps/api`. Set the variables from `apps/api/.env.example`
+  as config vars. If you use the Papertrail Heroku add-on (which drains
+  stdout), leave `PAPERTRAIL_TOKEN` empty so logs aren't sent twice.
+- **Mobile web (Vercel):** set the project's Root Directory to `apps/mobile`.
+  `vercel.json` moved there with the app.
 
 ## Data model
 
@@ -46,6 +103,8 @@ by webhooks) · `metros` (launch-region filter list).
 
 ## Roadmap
 
+0. **Foundations** — monorepo, feature flags, pluggable logging, and the
+   pluggable auth interface (done; see above).
 1. **Auth** — Apple / Google / Facebook sign-in (`expo-apple-authentication`,
    `@react-native-google-signin`, Facebook via Supabase OAuth), profile setup
    flow (handle, home metro, role).

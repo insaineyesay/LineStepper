@@ -1,0 +1,23 @@
+{
+  "name": "@linestepper/web",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Creator / organizer dashboard and admin back office (Next.js).",
+  "scripts": {
+    "dev": "next dev -p 3000",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@linestepper/shared": "*",
+    "next": "^16.4.5",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "@types/react": "~19.3.0",
+    "typescript": "~6.0.3"
+  }
+}
