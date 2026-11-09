@@ -48,3 +48,6 @@ example
 next-env.d.ts
 apps/api/dist/
 apps/*/.env
+
+# Supabase CLI cache (linked project, CLI version check)
+supabase/.temp/
