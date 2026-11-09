@@ -12,6 +12,8 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useSession } from '@/lib/auth-context';
+import { useFlag } from '@/lib/flags';
+import { getPushStatusAsync, registerForPushAsync, type PushStatus } from '@/lib/push';
 import { isSupabaseConfigured, supabase } from '@/lib/supabase';
 import type { DanceEvent } from '@/lib/types';
 
@@ -36,6 +38,20 @@ function formatFullDate(iso: string) {
   });
 }
 
+function reminderNote(remindersOn: boolean, pushStatus: PushStatus): string {
+  if (!remindersOn) return 'Saved to your profile.';
+  switch (pushStatus) {
+    case 'granted':
+      return "Saved to your profile. We'll send you a reminder about a day before it starts.";
+    case 'denied':
+      return 'Saved to your profile. Turn on notifications for LineStepper in Settings to get a reminder before it starts.';
+    case 'unsupported':
+      return 'Saved to your profile. Get the LineStepper app to be reminded before it starts.';
+    default:
+      return 'Saved to your profile.';
+  }
+}
+
 export default function EventDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
@@ -44,6 +60,14 @@ export default function EventDetailScreen() {
   const [notFound, setNotFound] = useState(false);
   const [bookmarked, setBookmarked] = useState(false);
   const [bookmarkBusy, setBookmarkBusy] = useState(false);
+  const remindersFlag = useFlag('events.reminders');
+  const pushFlag = useFlag('notify.push');
+  const remindersOn = remindersFlag && pushFlag;
+  const [pushStatus, setPushStatus] = useState<PushStatus>('undetermined');
+
+  useEffect(() => {
+    getPushStatusAsync().then(setPushStatus);
+  }, []);
 
   const load = useCallback(async () => {
     if (!isSupabaseConfigured || !id) {
@@ -98,6 +122,13 @@ export default function EventDetailScreen() {
         .insert({ profile_id: session.user.id, event_id: event.id });
       if (!error) {
         setBookmarked(true);
+        // Bookmarking is when reminders make sense, so ask for notifications here.
+        if (remindersOn) {
+          const result = await registerForPushAsync({ prompt: true });
+          setPushStatus(
+            result === 'registered' ? 'granted' : result === 'denied' ? 'denied' : await getPushStatusAsync()
+          );
+        }
       }
     }
     setBookmarkBusy(false);
@@ -218,7 +249,7 @@ export default function EventDetailScreen() {
           )}
           {session && bookmarked && (
             <ThemedText type="small" themeColor="textSecondary">
-              Saved to your profile. Event reminders are coming soon.
+              {reminderNote(remindersOn, pushStatus)}
             </ThemedText>
           )}
           {session?.user.id === event.organizer_id && (

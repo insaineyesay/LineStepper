@@ -1,6 +1,7 @@
 import { DarkTheme, DefaultTheme, ThemeProvider, Stack } from 'expo-router';
 import { useColorScheme } from 'react-native';
 
+import { PushSetup } from '@/components/push-setup';
 import { SessionProvider } from '@/lib/auth-context';
 import { FlagsProvider } from '@/lib/flags';
 import { useScreenLogging } from '@/lib/use-screen-logging';
@@ -11,6 +12,7 @@ export default function RootLayout() {
   return (
     <SessionProvider>
       <FlagsProvider>
+      <PushSetup />
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
         <Stack screenOptions={{ headerShown: false }}>
           {/* Every screen lives inside a tab's stack (see (tabs)/(browse,crews,profile)/_layout.tsx) so the tab bar never disappears. */}

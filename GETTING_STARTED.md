@@ -35,6 +35,7 @@ Skip this if someone has already done it for the project you're using.
    1. `0001_initial_schema.sql`
    2. `0002_crew_owner_membership.sql`
    3. `0003_feature_flags_and_admins.sql`
+   4. `0004_event_reminders.sql`
 3. Optional: run `supabase/seed_sample_data.sql` to add sample events and
    crews.
 4. Make sign-in emails contain a code. The app signs you in with a 6-digit
@@ -45,6 +46,46 @@ Skip this if someone has already done it for the project you're using.
      `Your LineStepper code is {{ .Token }}`.
    - Under **Authentication → Sign In / Providers → Email**, check that
      **Email OTP Length** is `6`.
+
+### Event reminders (push notifications)
+
+Every hour, Supabase sends a push notification for each bookmarked event
+starting in the next 24 hours. These steps are done once per Supabase project.
+`<ref>` is your project ref: the `xxxx` in `https://xxxx.supabase.co`.
+
+1. Run `0004_event_reminders.sql` (step 2 above). It creates the hourly job.
+2. Link the app to an Expo project. Without this, phones can't get a push
+   token. From `apps/mobile`, run `npx eas-cli@latest init` and sign in with
+   your Expo account. It adds `extra.eas.projectId` to `app.json`. Commit
+   that change.
+3. Make up a long random secret. It stops strangers from triggering the
+   reminder job:
+   ```bash
+   openssl rand -hex 32
+   ```
+4. In the SQL Editor, store the secret and your project URL for the job:
+   ```sql
+   select vault.create_secret('https://<ref>.supabase.co', 'project_url');
+   select vault.create_secret('<the secret>', 'reminders_cron_secret');
+   ```
+5. Deploy the function and give it the same secret (from the repo root):
+   ```bash
+   npx supabase login
+   npx supabase functions deploy send-reminders --no-verify-jwt --project-ref <ref>
+   npx supabase secrets set CRON_SECRET=<the secret> --project-ref <ref>
+   ```
+6. Check it runs:
+   ```bash
+   curl -X POST https://<ref>.supabase.co/functions/v1/send-reminders -H "x-cron-secret: <the secret>"
+   ```
+   You should get back something like `{"claimed":0,"sent":0}`.
+
+To turn reminders off without deploying, an admin sets the
+`events.reminders` or `notify.push` flag to off.
+
+Push notifications need a **development build**, not Expo Go. Android Expo
+Go can't receive them, and Expo Go can't get a token for your project. See
+section 7.
 
 ## 4. Create your env files
 
@@ -158,6 +199,20 @@ Your phone can't reach `localhost` on your computer.
 
 The phone and computer must be on the same Wi-Fi. If the QR code won't
 connect, run `npx expo start --tunnel` from `apps/mobile` instead.
+
+**To test event reminders on a phone**, you need a development build: your
+own version of the app with push notifications turned on. From `apps/mobile`:
+
+- iOS needs a paid Apple Developer account. Register your phone with
+  `npx eas-cli device:create`, then run
+  `npx eas-cli build --profile development --platform ios`. Say yes when it
+  asks to set up push notifications.
+- Android needs Firebase (FCM V1) credentials uploaded to Expo first. See
+  https://docs.expo.dev/push-notifications/fcm-credentials/. Then run
+  `npx eas-cli build --profile development --platform android`.
+
+Install the build on your phone, run `npm run dev:mobile`, and open the
+project from the build instead of Expo Go.
 
 ## 8. Everyday commands (from the repo root)
 

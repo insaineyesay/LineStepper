@@ -98,7 +98,7 @@ table (changed by admins at runtime). The API enforces flags: a route behind
 `profiles` (1:1 with auth users, auto-created on signup) · `crews` +
 `crew_members` (join requests gated by the crew's `is_joinable` paid flag) ·
 `events` (organizer-owned, published/draft/cancelled) · `event_bookmarks`
-(drives reminders) · `follows` · `subscriptions` (Stripe mirror, written only
+(drives reminders) · `push_tokens` (one per device, for reminders) · `follows` · `subscriptions` (Stripe mirror, written only
 by webhooks) · `metros` (launch-region filter list).
 
 ## Roadmap
@@ -110,7 +110,8 @@ by webhooks) · `metros` (launch-region filter list).
    flow (handle, home metro, role).
 2. **Events v1** — event detail screen, metro + date filters, bookmarking.
 3. **Reminders** — Expo push notifications; Supabase cron + edge function
-   sends reminders for bookmarked events.
+   sends reminders for bookmarked events (built; setup in
+   GETTING_STARTED.md, "Event reminders").
 4. **Crews v1** — crew detail, join requests, member management.
 5. **Paid side** — web dashboard (Next.js on Vercel) for organizer/DJ/crew
    billing via Stripe; event posting gated on active subscription tier.
