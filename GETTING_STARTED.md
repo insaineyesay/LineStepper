@@ -37,6 +37,7 @@ Skip this if someone has already done it for the project you're using.
    3. `0003_feature_flags_and_admins.sql`
    4. `0004_event_reminders.sql`
    5. `0005_post_credits.sql`
+   6. `0006_zip_radius_search.sql`, then load the ZIP codes (below)
 3. Optional: run `supabase/seed_sample_data.sql` to add sample events and
    crews.
 4. Make sign-in emails contain a code. The app signs you in with a 6-digit
@@ -87,6 +88,23 @@ To turn reminders off without deploying, an admin sets the
 Push notifications need a **development build**, not Expo Go. Android Expo
 Go can't receive them, and Expo Go can't get a token for your project. See
 section 7.
+
+### ZIP codes for "near me" search
+
+`0006_zip_radius_search.sql` creates an empty `zip_codes` table. Fill it once
+with the center point of every US ZIP area (about 33,800 rows, from the Census
+Bureau's 2025 ZCTA Gazetteer, public domain):
+
+1. In Supabase, open **Table Editor → zip_codes**.
+2. Click **Insert → Import data from CSV** and choose
+   `supabase/data/zip_codes.csv` from the repo.
+3. Check the import says 33,791 rows.
+
+Events then search by distance (5 to 100 miles) from a ZIP code or the
+phone's location. The location stays on the device apart from being sent
+with the search, rounded to about half a mile; it is never saved.
+Some ZIPs used only for PO boxes or single buildings aren't in the Census
+list; the app asks for a nearby ZIP in that case.
 
 ### Paid posting ($0.99 per event)
 

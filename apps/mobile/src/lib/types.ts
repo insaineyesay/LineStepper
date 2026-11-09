@@ -18,6 +18,8 @@ export interface Metro {
   id: number;
   name: string;
   state: string;
+  lat: number | null;
+  lng: number | null;
 }
 
 export interface Profile {
@@ -29,6 +31,7 @@ export interface Profile {
   bio: string | null;
   avatar_url: string | null;
   home_metro_id: number | null;
+  zip: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -65,6 +68,10 @@ export interface DanceEvent {
   is_featured: boolean;
   price_text: string | null;
   ticket_url: string | null;
+  zip: string | null;
+  /** Set by the database from the ZIP (or the area); read-only. */
+  lat: number | null;
+  lng: number | null;
   created_at: string;
   updated_at: string;
 }

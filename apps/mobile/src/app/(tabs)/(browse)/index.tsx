@@ -1,5 +1,5 @@
 import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { FlatList, Pressable, ScrollView, StyleSheet, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -10,8 +10,18 @@ import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, MaxContentWidth, Spacing, TabRootTopInset } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useSession } from '@/lib/auth-context';
+import {
+  DEFAULT_RADIUS,
+  distanceMiles,
+  getDeviceLocation,
+  isZip,
+  lookupZip,
+  RADIUS_OPTIONS,
+  type Coords,
+  type RadiusMiles,
+} from '@/lib/location';
 import { isSupabaseConfigured, supabase } from '@/lib/supabase';
-import type { DanceEvent, Metro } from '@/lib/types';
+import type { DanceEvent } from '@/lib/types';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -42,6 +52,9 @@ const SAMPLE_EVENTS: DanceEvent[] = [
     is_featured: true,
     price_text: '$10 at the door',
     ticket_url: null,
+    zip: null,
+    lat: null,
+    lng: null,
     created_at: '',
     updated_at: '',
   },
@@ -62,6 +75,9 @@ const SAMPLE_EVENTS: DanceEvent[] = [
     is_featured: false,
     price_text: 'Free',
     ticket_url: null,
+    zip: null,
+    lat: null,
+    lng: null,
     created_at: '',
     updated_at: '',
   },
@@ -77,7 +93,21 @@ export function formatEventDate(iso: string) {
   });
 }
 
-function EventCard({ event, onPress }: { event: DanceEvent; onPress: () => void }) {
+/** Where "near" searches are measured from. */
+type Origin =
+  | { kind: 'anywhere' }
+  | { kind: 'me'; coords: Coords }
+  | { kind: 'zip'; zip: string; coords: Coords };
+
+function EventCard({
+  event,
+  milesAway,
+  onPress,
+}: {
+  event: DanceEvent;
+  milesAway: number | null;
+  onPress: () => void;
+}) {
   return (
     <Pressable onPress={onPress} style={({ pressed }) => pressed && styles.pressed}>
       <ThemedView type="backgroundElement" style={styles.card}>
@@ -91,6 +121,7 @@ function EventCard({ event, onPress }: { event: DanceEvent; onPress: () => void 
         <ThemedText type="small" themeColor="textSecondary">
           {[event.venue_name, event.city].filter(Boolean).join(' · ')}
           {event.price_text ? ` · ${event.price_text}` : ''}
+          {milesAway !== null ? ` · ${milesAway < 1 ? 'under 1' : Math.round(milesAway)} mi` : ''}
         </ThemedText>
       </ThemedView>
     </Pressable>
@@ -102,57 +133,116 @@ export default function EventsScreen() {
   const router = useRouter();
   const { session } = useSession();
   const [events, setEvents] = useState<DanceEvent[]>(SAMPLE_EVENTS);
-  const [metros, setMetros] = useState<Metro[]>([]);
   const [usingSampleData, setUsingSampleData] = useState(true);
   const [search, setSearch] = useState('');
-  const [metroFilter, setMetroFilter] = useState<number | null>(null);
+  const [origin, setOrigin] = useState<Origin>({ kind: 'anywhere' });
+  const [radius, setRadius] = useState<RadiusMiles>(DEFAULT_RADIUS);
+  const [zipInput, setZipInput] = useState('');
+  const [locating, setLocating] = useState(false);
+  const [nearMessage, setNearMessage] = useState<string | null>(null);
+  // Once someone picks a location themselves, don't replace it with their
+  // profile ZIP when that finishes loading.
+  const pickedOrigin = useRef(false);
   const [dateFilter, setDateFilter] = useState<{
     key: DateFilterKey;
     cutoff: number | null;
   }>({ key: 'all', cutoff: null });
 
-  // Refetch every time the tab gains focus so freshly posted events appear.
+  // Start near the signed-in person's ZIP (PRD: events within 25 miles).
+  const userId = session?.user.id;
+  useEffect(() => {
+    if (!userId || !isSupabaseConfigured) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase.from('profiles').select('zip').eq('id', userId).maybeSingle();
+      const zip = data?.zip;
+      if (!zip || cancelled || pickedOrigin.current) return;
+      const coords = await lookupZip(zip);
+      if (coords && !cancelled && !pickedOrigin.current) {
+        setOrigin({ kind: 'zip', zip, coords });
+        setZipInput(zip);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
+
+  // Refetch every time the tab gains focus (so freshly posted events appear)
+  // and whenever the location or radius changes.
   useFocusEffect(
     useCallback(() => {
       if (!isSupabaseConfigured) {
         return;
       }
       let cancelled = false;
-      supabase
-        .from('events')
-        .select('*')
-        .eq('status', 'published')
-        .gte('starts_at', new Date().toISOString())
-        .order('starts_at', { ascending: true })
-        .limit(100)
-        .then(({ data, error }) => {
-          if (!cancelled && !error && data) {
-            setEvents(data);
-            setUsingSampleData(false);
-          }
-        });
-      supabase
-        .from('metros')
-        .select('*')
-        .order('id')
-        .then(({ data }) => {
-          if (!cancelled && data) {
-            setMetros(data);
-          }
-        });
+      const query =
+        origin.kind === 'anywhere'
+          ? supabase
+              .from('events')
+              .select('*')
+              .eq('status', 'published')
+              .gte('starts_at', new Date().toISOString())
+              .order('starts_at', { ascending: true })
+              .limit(100)
+          : supabase
+              .rpc('events_near', {
+                p_lat: origin.coords.lat,
+                p_lng: origin.coords.lng,
+                p_miles: radius,
+              })
+              .limit(100);
+      query.then(({ data, error }) => {
+        if (!cancelled && !error && data) {
+          setEvents(data as DanceEvent[]);
+          setUsingSampleData(false);
+        }
+      });
       return () => {
         cancelled = true;
       };
-    }, [])
+    }, [origin, radius])
   );
+
+  const chooseAnywhere = () => {
+    pickedOrigin.current = true;
+    setNearMessage(null);
+    setOrigin({ kind: 'anywhere' });
+  };
+
+  const chooseNearMe = async () => {
+    pickedOrigin.current = true;
+    setNearMessage(null);
+    setLocating(true);
+    const result = await getDeviceLocation();
+    setLocating(false);
+    if (result === 'denied') {
+      setNearMessage('Location is off for LineUp2Step. Enter a ZIP code instead, or allow location in Settings.');
+    } else if (result === 'unavailable') {
+      setNearMessage("Couldn't find your location. Enter a ZIP code instead.");
+    } else {
+      setOrigin({ kind: 'me', coords: result });
+    }
+  };
+
+  const changeZip = async (text: string) => {
+    const zip = text.replace(/[^0-9]/g, '').slice(0, 5);
+    setZipInput(zip);
+    if (!isZip(zip)) return;
+    pickedOrigin.current = true;
+    setNearMessage(null);
+    const coords = await lookupZip(zip);
+    if (coords) {
+      setOrigin({ kind: 'zip', zip, coords });
+    } else {
+      setNearMessage(`We don't recognize ZIP ${zip}.`);
+    }
+  };
 
   const visibleEvents = useMemo(() => {
     const q = search.trim().toLowerCase();
     const cutoff = dateFilter.cutoff;
     return events.filter((e) => {
-      if (metroFilter !== null && e.metro_id !== metroFilter) {
-        return false;
-      }
       if (cutoff && new Date(e.starts_at).getTime() > cutoff) {
         return false;
       }
@@ -163,7 +253,9 @@ export default function EventsScreen() {
         .filter(Boolean)
         .some((field) => field!.toLowerCase().includes(q));
     });
-  }, [events, search, metroFilter, dateFilter]);
+  }, [events, search, dateFilter]);
+
+  const originCoords = origin.kind === 'anywhere' ? null : origin.coords;
 
   return (
     <ThemedView style={styles.container}>
@@ -200,26 +292,55 @@ export default function EventsScreen() {
             />
           ))}
         </ScrollView>
-        {metros.length > 0 && (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          style={styles.chipScroll}
+          contentContainerStyle={styles.chipRow}>
+          <Chip label="Anywhere" selected={origin.kind === 'anywhere'} onPress={chooseAnywhere} />
+          <Chip
+            label={locating ? 'Finding you…' : 'Near me'}
+            selected={origin.kind === 'me'}
+            onPress={() => void chooseNearMe()}
+          />
+          <TextInput
+            value={zipInput}
+            onChangeText={(text) => void changeZip(text)}
+            placeholder="ZIP"
+            placeholderTextColor={theme.textSecondary}
+            keyboardType="number-pad"
+            maxLength={5}
+            accessibilityLabel="ZIP code"
+            style={[
+              styles.zipInput,
+              {
+                backgroundColor: origin.kind === 'zip' ? theme.backgroundSelected : theme.backgroundElement,
+                color: theme.text,
+              },
+            ]}
+          />
+        </ScrollView>
+        {origin.kind !== 'anywhere' && (
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
             style={styles.chipScroll}
             contentContainerStyle={styles.chipRow}>
-            <Chip
-              label="All areas"
-              selected={metroFilter === null}
-              onPress={() => setMetroFilter(null)}
-            />
-            {metros.map((metro) => (
+            {RADIUS_OPTIONS.map((miles) => (
               <Chip
-                key={metro.id}
-                label={metro.name}
-                selected={metroFilter === metro.id}
-                onPress={() => setMetroFilter(metro.id)}
+                key={miles}
+                label={`${miles} mi`}
+                selected={radius === miles}
+                onPress={() => setRadius(miles)}
               />
             ))}
           </ScrollView>
+        )}
+        {nearMessage && (
+          <ThemedText type="small" themeColor="textSecondary">
+            {nearMessage}
+          </ThemedText>
         )}
         {usingSampleData && (
           <ThemedText type="small" themeColor="textSecondary">
@@ -238,6 +359,11 @@ export default function EventsScreen() {
           renderItem={({ item }) => (
             <EventCard
               event={item}
+              milesAway={
+                originCoords && item.lat !== null && item.lng !== null
+                  ? distanceMiles(originCoords, { lat: item.lat, lng: item.lng })
+                  : null
+              }
               onPress={() =>
                 router.push({ pathname: '/event/[id]', params: { id: item.id } })
               }
@@ -246,7 +372,9 @@ export default function EventsScreen() {
           contentContainerStyle={styles.list}
           ListEmptyComponent={
             <ThemedText themeColor="textSecondary" style={styles.empty}>
-              No events match your filters.
+              {origin.kind === 'anywhere'
+                ? 'No events match your filters.'
+                : `No events within ${radius} miles. Try a wider distance.`}
             </ThemedText>
           }
         />
@@ -283,6 +411,18 @@ const styles = StyleSheet.create({
   },
   chipRow: {
     gap: Spacing.two,
+    alignItems: 'center',
+  },
+  // Sized and shaped like a chip so it sits in the same row.
+  zipInput: {
+    width: 72,
+    borderRadius: Spacing.three,
+    paddingHorizontal: Spacing.two,
+    paddingVertical: Spacing.one,
+    fontSize: 14,
+    lineHeight: 20,
+    fontWeight: 500,
+    textAlign: 'center',
   },
   list: {
     gap: Spacing.three,
