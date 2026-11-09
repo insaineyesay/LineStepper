@@ -1,3 +1,4 @@
+import Constants from 'expo-constants';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import {
@@ -442,6 +443,9 @@ function ProfileEditor({ userId, email }: { userId: string; email: string | unde
           Sign out
         </ThemedText>
       </Pressable>
+      <ThemedText type="small" themeColor="textSecondary" style={styles.version}>
+        LineUp2Step {Constants.expoConfig?.version ?? ''}
+      </ThemedText>
     </>
   );
 }
@@ -519,6 +523,10 @@ const styles = StyleSheet.create({
   signOut: {
     textAlign: 'center',
     paddingVertical: Spacing.two,
+  },
+  version: {
+    textAlign: 'center',
+    opacity: 0.7,
   },
   loader: {
     paddingTop: Spacing.five,
