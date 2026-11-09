@@ -4,6 +4,7 @@ import { AppState, Platform } from 'react-native';
 import { createLogger, LEVEL_RANK, LogEvents, type LogEvent, type LogTransport } from '@linestepper/shared';
 
 import { randomId } from './ids';
+import { createPostHogTransport } from './telemetry/posthog-transport';
 
 export const API_URL = process.env.EXPO_PUBLIC_API_URL || undefined;
 
@@ -102,8 +103,17 @@ const consoleTransport: LogTransport = {
   },
 };
 
+// Where events go. Each one is optional and switched on by configuration:
+// - console in development;
+// - PostHog (analytics and error tracking), mapped by the shared catalog
+//   (packages/shared/src/telemetry);
+// - our API, which writes warnings, errors and key events to the server log.
+const POSTHOG_KEY = process.env.EXPO_PUBLIC_POSTHOG_KEY || undefined;
+const POSTHOG_HOST = process.env.EXPO_PUBLIC_POSTHOG_HOST || 'https://us.i.posthog.com';
+
 const transports: LogTransport[] = [];
 if (__DEV__) transports.push(consoleTransport);
+if (POSTHOG_KEY) transports.push(createPostHogTransport(POSTHOG_KEY, POSTHOG_HOST));
 if (API_URL) transports.push(httpBatchTransport(API_URL));
 
 /**

@@ -38,6 +38,7 @@ export const FLAG_REGISTRY = {
   // Log connectors (B5). stdout is always on and has no flag.
   'log.connector.papertrail': { default: true, description: 'Ship server logs to Papertrail' },
   'log.connector.sentry': { default: true, description: 'Ship warnings and errors to Sentry' },
+  'log.connector.posthog': { default: true, description: 'Send API analytics and errors to PostHog' },
 } as const satisfies Record<string, FlagDefinition>;
 
 export interface FlagDefinition {

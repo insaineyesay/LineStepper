@@ -29,7 +29,7 @@ async function fetchFlags(): Promise<FlagValues | null> {
     logger.debug(LogEvents.flagsLoaded);
     return { ...defaultFlags(), ...body.flags };
   } catch (err) {
-    logger.warn('flags.load_failed', { message: (err as Error).message });
+    logger.warn(LogEvents.flagsLoadFailed, { message: (err as Error).message });
     return null;
   }
 }
