@@ -8,7 +8,8 @@ import { ThemedView } from './themed-view';
 
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { supabase } from '@/lib/supabase';
+import { createCrew, updateCrew, type CrewInput } from '@/data/crews';
+import { listMetros } from '@/data/reference';
 import type { Crew, Metro } from '@/lib/types';
 
 interface CrewFormProps {
@@ -39,15 +40,11 @@ export function CrewForm({ userId, existing, onSaved }: CrewFormProps) {
 
   useEffect(() => {
     let cancelled = false;
-    supabase
-      .from('metros')
-      .select('*')
-      .order('id')
-      .then(({ data }) => {
-        if (!cancelled && data) {
-          setMetros(data);
-        }
-      });
+    listMetros().then(({ data }) => {
+      if (!cancelled && data) {
+        setMetros(data);
+      }
+    });
     return () => {
       cancelled = true;
     };
@@ -61,7 +58,7 @@ export function CrewForm({ userId, existing, onSaved }: CrewFormProps) {
       return;
     }
 
-    const payload = {
+    const payload: CrewInput = {
       name: cleanName,
       description: description.trim() || null,
       home_metro_id: metroId,
@@ -71,10 +68,7 @@ export function CrewForm({ userId, existing, onSaved }: CrewFormProps) {
 
     setSaving(true);
     if (existing) {
-      const { error } = await supabase
-        .from('crews')
-        .update(payload)
-        .eq('id', existing.id);
+      const { error } = await updateCrew(existing.id, payload);
       setSaving(false);
       if (error) {
         setMessage(error.message);
@@ -87,17 +81,13 @@ export function CrewForm({ userId, existing, onSaved }: CrewFormProps) {
         setMessage('That name needs a few more letters or numbers.');
         return;
       }
-      const { data, error } = await supabase
-        .from('crews')
-        .insert({ ...payload, slug, owner_id: userId })
-        .select('id')
-        .single();
+      const { data, error } = await createCrew(userId, slug, payload);
       setSaving(false);
-      if (error || !data) {
+      if (error) {
         setMessage(
-          error?.code === '23505'
+          error.code === '23505'
             ? 'A crew with a very similar name already exists — try another.'
-            : (error?.message ?? 'Something went wrong creating the crew.')
+            : error.message
         );
       } else {
         onSaved(data.id);

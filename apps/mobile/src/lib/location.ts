@@ -2,8 +2,9 @@ import * as Location from 'expo-location';
 
 import { LogEvents } from '@linestepper/shared';
 
+import { getZipCenter } from '@/data/reference';
+
 import { logger } from './logger';
-import { isSupabaseConfigured, supabase } from './supabase';
 
 /**
  * Locations for the "near" event search. All on the device or in our own
@@ -27,9 +28,9 @@ export function isZip(value: string): boolean {
 
 /** The center of a ZIP area, or null if the ZIP isn't a real one. */
 export async function lookupZip(zip: string): Promise<Coords | null> {
-  if (!isSupabaseConfigured || !isZip(zip)) return null;
-  const { data } = await supabase.from('zip_codes').select('lat, lng').eq('zip', zip).maybeSingle();
-  return data ? { lat: data.lat, lng: data.lng } : null;
+  if (!isZip(zip)) return null;
+  const { data } = await getZipCenter(zip);
+  return data ?? null;
 }
 
 export type DeviceLocationResult = Coords | 'denied' | 'unavailable';

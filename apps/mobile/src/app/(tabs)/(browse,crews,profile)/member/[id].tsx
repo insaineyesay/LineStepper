@@ -12,8 +12,12 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useSession } from '@/lib/auth-context';
-import { isSupabaseConfigured, supabase } from '@/lib/supabase';
-import type { Profile, ProfileRole } from '@/lib/types';
+import { isBackendConfigured } from '@/data/backend';
+import { listCrewsForMember, type CrewLink } from '@/data/crews';
+import { listUpcomingEventsByOrganizer, type UpcomingEventSummary } from '@/data/events';
+import { countFollowers, follow, isFollowing as fetchIsFollowing, unfollow } from '@/data/follows';
+import { getMemberProfile, type MemberProfile } from '@/data/profiles';
+import type { ProfileRole } from '@/lib/types';
 
 const ROLE_LABELS: Record<ProfileRole, string> = {
   dancer: 'Dancer',
@@ -24,22 +28,6 @@ const ROLE_LABELS: Record<ProfileRole, string> = {
   vendor: 'Vendor',
 };
 
-interface MemberProfile extends Profile {
-  metro: { name: string; state: string } | null;
-}
-
-interface CrewLink {
-  crew_id: string;
-  crews: { id: string; name: string } | null;
-}
-
-interface UpcomingEvent {
-  id: string;
-  title: string;
-  starts_at: string;
-  city: string | null;
-}
-
 export default function MemberScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
@@ -47,62 +35,39 @@ export default function MemberScreen() {
   const [profile, setProfile] = useState<MemberProfile | null>(null);
   const [notFound, setNotFound] = useState(false);
   const [crews, setCrews] = useState<CrewLink[]>([]);
-  const [events, setEvents] = useState<UpcomingEvent[]>([]);
+  const [events, setEvents] = useState<UpcomingEventSummary[]>([]);
   const [followerCount, setFollowerCount] = useState(0);
   const [isFollowing, setIsFollowing] = useState(false);
   const [followBusy, setFollowBusy] = useState(false);
 
   const load = useCallback(async () => {
-    if (!isSupabaseConfigured || !id) {
+    if (!isBackendConfigured || !id) {
       setNotFound(true);
       return;
     }
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*, metro:metros(name, state)')
-      .eq('id', id)
-      .single();
-    if (error || !data) {
+    const { data, error } = await getMemberProfile(id);
+    if (error) {
       setNotFound(true);
       return;
     }
-    setProfile(data as MemberProfile);
+    setProfile(data);
 
     const [crewRes, eventRes, countRes] = await Promise.all([
-      supabase
-        .from('crew_members')
-        .select('crew_id, crews(id, name)')
-        .eq('profile_id', id)
-        .eq('status', 'active'),
-      supabase
-        .from('events')
-        .select('id, title, starts_at, city')
-        .eq('organizer_id', id)
-        .eq('status', 'published')
-        .gte('starts_at', new Date().toISOString())
-        .order('starts_at')
-        .limit(10),
-      supabase
-        .from('follows')
-        .select('*', { count: 'exact', head: true })
-        .eq('followed_id', id),
+      listCrewsForMember(id),
+      listUpcomingEventsByOrganizer(id),
+      countFollowers(id),
     ]);
     if (crewRes.data) {
-      setCrews(crewRes.data as unknown as CrewLink[]);
+      setCrews(crewRes.data);
     }
     if (eventRes.data) {
       setEvents(eventRes.data);
     }
-    setFollowerCount(countRes.count ?? 0);
+    setFollowerCount(countRes.data ?? 0);
 
     if (session && session.user.id !== id) {
-      const { data: followRow } = await supabase
-        .from('follows')
-        .select('follower_id')
-        .eq('follower_id', session.user.id)
-        .eq('followed_id', id)
-        .maybeSingle();
-      setIsFollowing(Boolean(followRow));
+      const { data: following } = await fetchIsFollowing(session.user.id, id);
+      setIsFollowing(Boolean(following));
     }
   }, [id, session]);
 
@@ -117,19 +82,13 @@ export default function MemberScreen() {
     }
     setFollowBusy(true);
     if (isFollowing) {
-      const { error } = await supabase
-        .from('follows')
-        .delete()
-        .eq('follower_id', session.user.id)
-        .eq('followed_id', id);
+      const { error } = await unfollow(session.user.id, id);
       if (!error) {
         setIsFollowing(false);
         setFollowerCount((c) => Math.max(0, c - 1));
       }
     } else {
-      const { error } = await supabase
-        .from('follows')
-        .insert({ follower_id: session.user.id, followed_id: id });
+      const { error } = await follow(session.user.id, id);
       if (!error) {
         setIsFollowing(true);
         setFollowerCount((c) => c + 1);

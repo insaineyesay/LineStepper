@@ -20,7 +20,9 @@ import {
   type Coords,
   type RadiusMiles,
 } from '@/lib/location';
-import { isSupabaseConfigured, supabase } from '@/lib/supabase';
+import { isBackendConfigured } from '@/data/backend';
+import { listEventsNear, listUpcomingEvents } from '@/data/events';
+import { getProfileZip } from '@/data/profiles';
 import type { DanceEvent } from '@/lib/types';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -151,11 +153,10 @@ export default function EventsScreen() {
   // Start near the signed-in person's ZIP (PRD: events within 25 miles).
   const userId = session?.user.id;
   useEffect(() => {
-    if (!userId || !isSupabaseConfigured) return;
+    if (!userId || !isBackendConfigured) return;
     let cancelled = false;
     (async () => {
-      const { data } = await supabase.from('profiles').select('zip').eq('id', userId).maybeSingle();
-      const zip = data?.zip;
+      const { data: zip } = await getProfileZip(userId);
       if (!zip || cancelled || pickedOrigin.current) return;
       const coords = await lookupZip(zip);
       if (coords && !cancelled && !pickedOrigin.current) {
@@ -172,29 +173,15 @@ export default function EventsScreen() {
   // and whenever the location or radius changes.
   useFocusEffect(
     useCallback(() => {
-      if (!isSupabaseConfigured) {
+      if (!isBackendConfigured) {
         return;
       }
       let cancelled = false;
-      const query =
-        origin.kind === 'anywhere'
-          ? supabase
-              .from('events')
-              .select('*')
-              .eq('status', 'published')
-              .gte('starts_at', new Date().toISOString())
-              .order('starts_at', { ascending: true })
-              .limit(100)
-          : supabase
-              .rpc('events_near', {
-                p_lat: origin.coords.lat,
-                p_lng: origin.coords.lng,
-                p_miles: radius,
-              })
-              .limit(100);
-      query.then(({ data, error }) => {
-        if (!cancelled && !error && data) {
-          setEvents(data as DanceEvent[]);
+      const request =
+        origin.kind === 'anywhere' ? listUpcomingEvents() : listEventsNear(origin.coords, radius);
+      request.then(({ data, error }) => {
+        if (!cancelled && !error) {
+          setEvents(data);
           setUsingSampleData(false);
         }
       });
