@@ -17,6 +17,7 @@ export function createPostHogTransport(apiKey: string, host: string): LogTranspo
     capture_pageleave: false,
     capture_exceptions: false,
     disable_session_recording: true,
+    disable_surveys: true,
   });
   let identifiedUser: string | undefined;
 
