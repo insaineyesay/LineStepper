@@ -10,6 +10,7 @@ import { ThemedView } from './themed-view';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { fetchPostCredits, publishEvent, usePaidPosting } from '@/lib/credits';
+import { isZip, lookupZip } from '@/lib/location';
 import { supabase } from '@/lib/supabase';
 import type { DanceEvent, EventStatus, Metro } from '@/lib/types';
 
@@ -41,6 +42,7 @@ export function EventForm({ userId, existing, onSaved }: EventFormProps) {
   const [venueName, setVenueName] = useState(existing?.venue_name ?? '');
   const [address, setAddress] = useState(existing?.address ?? '');
   const [city, setCity] = useState(existing?.city ?? '');
+  const [zip, setZip] = useState(existing?.zip ?? '');
   const [metroId, setMetroId] = useState<number | null>(existing?.metro_id ?? null);
   const [priceText, setPriceText] = useState(existing?.price_text ?? '');
   const [ticketUrl, setTicketUrl] = useState(existing?.ticket_url ?? '');
@@ -102,6 +104,20 @@ export function EventForm({ userId, existing, onSaved }: EventFormProps) {
       return;
     }
 
+    // The ZIP places the event for "near me" searches. Required for new events;
+    // older events without one fall back to their area.
+    const cleanZip = zip.trim();
+    if (cleanZip || !existing) {
+      if (!isZip(cleanZip)) {
+        setMessage('Enter the venue’s 5-digit ZIP code so dancers nearby can find it.');
+        return;
+      }
+      if (!(await lookupZip(cleanZip))) {
+        setMessage(`We don't recognize ZIP ${cleanZip}. Double-check it.`);
+        return;
+      }
+    }
+
     const payload = {
       title: title.trim(),
       description: description.trim() || null,
@@ -109,6 +125,7 @@ export function EventForm({ userId, existing, onSaved }: EventFormProps) {
       venue_name: venueName.trim() || null,
       address: address.trim() || null,
       city: city.trim() || null,
+      zip: cleanZip || null,
       metro_id: metroId,
       price_text: priceText.trim() || null,
       ticket_url: ticketUrl.trim() || null,
@@ -239,6 +256,17 @@ export function EventForm({ userId, existing, onSaved }: EventFormProps) {
         onChangeText={setCity}
         placeholder="Norfolk"
         placeholderTextColor={theme.textSecondary}
+        style={inputStyle}
+      />
+
+      <ThemedText type="small">ZIP code</ThemedText>
+      <TextInput
+        value={zip}
+        onChangeText={(text) => setZip(text.replace(/[^0-9]/g, '').slice(0, 5))}
+        placeholder="23510"
+        placeholderTextColor={theme.textSecondary}
+        keyboardType="number-pad"
+        maxLength={5}
         style={inputStyle}
       />
 

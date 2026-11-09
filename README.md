@@ -98,7 +98,7 @@ table (changed by admins at runtime). The API enforces flags: a route behind
 `profiles` (1:1 with auth users, auto-created on signup) · `crews` +
 `crew_members` (join requests gated by the crew's `is_joinable` paid flag) ·
 `events` (organizer-owned, published/draft/cancelled) · `event_bookmarks`
-(drives reminders) · `push_tokens` (one per device, for reminders) · `post_credit_ledger` (post credits bought and spent) · `follows` · `subscriptions` (Stripe mirror, written only
+(drives reminders) · `push_tokens` (one per device, for reminders) · `post_credit_ledger` (post credits bought and spent) · `zip_codes` (US ZIP centers for radius search) · `follows` · `subscriptions` (Stripe mirror, written only
 by webhooks) · `metros` (launch-region filter list).
 
 ## Roadmap
@@ -108,7 +108,8 @@ by webhooks) · `metros` (launch-region filter list).
 1. **Auth** — Apple / Google / Facebook sign-in (`expo-apple-authentication`,
    `@react-native-google-signin`, Facebook via Supabase OAuth), profile setup
    flow (handle, home metro, role).
-2. **Events v1** — event detail screen, metro + date filters, bookmarking.
+2. **Events v1** — event detail screen, date filters, radius search (ZIP or
+   phone location, 5–100 mi), bookmarking.
 3. **Reminders** — Expo push notifications; Supabase cron + edge function
    sends reminders for bookmarked events (built; setup in
    GETTING_STARTED.md, "Event reminders").
