@@ -89,6 +89,51 @@ Push notifications need a **development build**, not Expo Go. Android Expo
 Go can't receive them, and Expo Go can't get a token for your project. See
 section 7.
 
+### API on Heroku (logs, crash reports, feature flags)
+
+The API (`apps/api`, Node.js) receives the app's warnings, errors and a few
+key events (app start, sign-in/out, posting, checkout, push), and serves the
+feature flags. Taps and screen views stay on the device. Everything it
+receives is written to Heroku's log as one JSON line, with personal data such
+as emails removed.
+
+1. In Heroku, create an app (for example `lineup2step-api`). Under
+   **Resources**, use an **Eco** dyno ($5/month). Eco dynos sleep after 30
+   minutes without traffic, so the first request after that takes a few
+   seconds; the app's log uploads simply retry. A **Basic** dyno ($7) never
+   sleeps.
+2. Under **Settings → Config Vars**, add:
+
+   | Key | Value |
+   |---|---|
+   | `NPM_CONFIG_WORKSPACE` | `@linestepper/api` (installs only the API, not the whole app) |
+   | `NODE_ENV` | `production` |
+   | `CORS_ORIGINS` | your web app's address, e.g. `https://<your-vercel-domain>` |
+   | `AUTH_PROVIDER` | `supabase` |
+   | `SUPABASE_URL` | `https://<ref>.supabase.co` |
+   | `SUPABASE_SERVICE_ROLE_KEY` | Supabase → Project Settings → API → `service_role` key (keep it secret) |
+   | `LOG_LEVEL` | `info` |
+
+3. Under **Deploy**, connect the GitHub repo and turn on automatic deploys
+   from `main`, then click **Deploy Branch** once.
+4. Check it: open `https://<your-app>.herokuapp.com/health`. It should show
+   `"ok":true`.
+5. Point the app at it: in Vercel (Settings → Environment Variables) and in
+   `apps/mobile/.env.production`, set
+   `EXPO_PUBLIC_API_URL=https://<your-app>.herokuapp.com`, then redeploy the
+   web app. Phone builds pick it up from `.env.production`.
+
+**Reading the logs:** Heroku dashboard → **More → View logs**, or
+`heroku logs --tail -a <your-app>`. Heroku only keeps the most recent 1,500
+lines, so for search, history and email alerts on errors, add a logging
+add-on from **Resources → Add-ons** (Papertrail is the one this API was built
+for; it's billed through Heroku). With the add-on, leave `PAPERTRAIL_TOKEN`
+empty so logs aren't sent twice.
+
+Crashes inside native code close the app before it can report anything;
+those appear in App Store Connect and Google Play Console once the app is in
+the stores.
+
 ### ZIP codes for "near me" search
 
 `0006_zip_radius_search.sql` creates an empty `zip_codes` table. Fill it once
