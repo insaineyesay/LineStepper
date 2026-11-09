@@ -86,10 +86,10 @@ table (changed by admins at runtime). The API enforces flags: a route behind
 
 ## Deploying
 
-- **API (Heroku):** the root `Procfile` and the `heroku-postbuild` script
-  build and start `apps/api`. Set the variables from `apps/api/.env.example`
-  as config vars. If you use the Papertrail Heroku add-on (which drains
-  stdout), leave `PAPERTRAIL_TOKEN` empty so logs aren't sent twice.
+- **API (Heroku):** the root `Procfile` and the `heroku-postbuild` scripts
+  build and start `apps/api`; the `NPM_CONFIG_WORKSPACE=@linestepper/api`
+  config var keeps the install to the API alone. Step-by-step setup and
+  config vars: GETTING_STARTED.md, "API on Heroku".
 - **Mobile web (Vercel):** set the project's Root Directory to `apps/mobile`.
   `vercel.json` moved there with the app.
 

@@ -31,6 +31,12 @@ Add a line under "Unreleased" in the same pull request as the change.
   role, home area and ZIP, plus public member pages.
 - Feature flags that admins can switch without a deploy.
 - Logging of screen views, taps, sign-in and app events, behind one logger.
+- Crash reporting: errors the app doesn't handle, and screens that fail to
+  draw, are sent to the API with the app version and platform. A failed
+  screen shows "Something went wrong" with a Try again button.
+- The API can run on Heroku (setup in GETTING_STARTED.md). The app uploads
+  warnings, errors and a few key events there; taps and screen views stay
+  on the device.
 
 ### Changed
 - The tab bar stays on every screen, and tapping a tab returns to its first

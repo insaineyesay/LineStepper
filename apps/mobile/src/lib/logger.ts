@@ -1,7 +1,7 @@
 import Constants from 'expo-constants';
 import { AppState, Platform } from 'react-native';
 
-import { createLogger, LEVEL_RANK, type LogEvent, type LogTransport } from '@linestepper/shared';
+import { createLogger, LEVEL_RANK, LogEvents, type LogEvent, type LogTransport } from '@linestepper/shared';
 
 import { randomId } from './ids';
 
@@ -17,6 +17,26 @@ const logAuth: { getAccessToken: () => Promise<string | undefined> } = {
 /** Called by the auth layer so log uploads carry the user's token (server sets userId from it). */
 export function configureLogAuth(getter: () => Promise<string | undefined>) {
   logAuth.getAccessToken = getter;
+}
+
+/**
+ * What leaves the device. Every warning and error, plus a few events worth
+ * keeping. Taps and screen views stay local: they'd be most of the volume,
+ * and Heroku keeps only its most recent log lines, so they'd push the
+ * errors out. Add an event here to start collecting it.
+ */
+const UPLOADED_INFO_EVENTS = new Set<string>([
+  LogEvents.appStart,
+  LogEvents.authSignIn,
+  LogEvents.authSignOut,
+  LogEvents.eventPublished,
+  LogEvents.checkoutStarted,
+  LogEvents.pushRegistered,
+  LogEvents.pushOpened,
+]);
+
+export function shouldUpload(event: LogEvent): boolean {
+  return LEVEL_RANK[event.level] >= LEVEL_RANK.warn || UPLOADED_INFO_EVENTS.has(event.event);
 }
 
 /**
@@ -62,6 +82,7 @@ function httpBatchTransport(url: string, { maxBatch = 20, intervalMs = 5000, max
   return {
     name: 'http',
     write(event) {
+      if (!shouldUpload(event)) return;
       queue.push(event);
       if (queue.length > maxQueue) queue = queue.slice(queue.length - maxQueue);
       if (queue.length >= maxBatch) void send();
