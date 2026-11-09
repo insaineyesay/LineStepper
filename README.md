@@ -98,7 +98,7 @@ table (changed by admins at runtime). The API enforces flags: a route behind
 `profiles` (1:1 with auth users, auto-created on signup) · `crews` +
 `crew_members` (join requests gated by the crew's `is_joinable` paid flag) ·
 `events` (organizer-owned, published/draft/cancelled) · `event_bookmarks`
-(drives reminders) · `push_tokens` (one per device, for reminders) · `follows` · `subscriptions` (Stripe mirror, written only
+(drives reminders) · `push_tokens` (one per device, for reminders) · `post_credit_ledger` (post credits bought and spent) · `follows` · `subscriptions` (Stripe mirror, written only
 by webhooks) · `metros` (launch-region filter list).
 
 ## Roadmap
@@ -113,8 +113,10 @@ by webhooks) · `metros` (launch-region filter list).
    sends reminders for bookmarked events (built; setup in
    GETTING_STARTED.md, "Event reminders").
 4. **Crews v1** — crew detail, join requests, member management.
-5. **Paid side** — web dashboard (Next.js on Vercel) for organizer/DJ/crew
-   billing via Stripe; event posting gated on active subscription tier.
+5. **Paid side** — per the client's PRD (v0.2): $0.99 per event post. Post
+   credits, the publish gate and Stripe checkout on the web are built (setup
+   in GETTING_STARTED.md, "Paid posting"); Apple / Google in-app purchase
+   needs the store accounts. The $0.99 app price is set in the stores.
 6. **Polish & beta** — replace placeholder tab icons and app icon/splash,
    TestFlight + Play internal testing with a founding crew.
 

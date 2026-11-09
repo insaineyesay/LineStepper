@@ -16,6 +16,7 @@ import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, MaxContentWidth, Spacing, TabRootTopInset } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useSession } from '@/lib/auth-context';
+import { fetchPostCredits, usePaidPosting } from '@/lib/credits';
 import { logTap } from '@/lib/log-tap';
 import { unregisterPushAsync } from '@/lib/push';
 import { authClient } from '@/lib/auth';
@@ -199,6 +200,8 @@ function BookmarksCard({ userId }: { userId: string }) {
 
 function MyEventsCard({ userId }: { userId: string }) {
   const router = useRouter();
+  const paidPosting = usePaidPosting();
+  const [credits, setCredits] = useState<number | null>(null);
   const [myEvents, setMyEvents] = useState<
     { id: string; title: string; starts_at: string; status: string }[]
   >([]);
@@ -206,6 +209,11 @@ function MyEventsCard({ userId }: { userId: string }) {
   useFocusEffect(
     useCallback(() => {
       let cancelled = false;
+      if (paidPosting) {
+        fetchPostCredits().then((n) => {
+          if (!cancelled) setCredits(n);
+        });
+      }
       supabase
         .from('events')
         .select('id, title, starts_at, status')
@@ -219,12 +227,20 @@ function MyEventsCard({ userId }: { userId: string }) {
       return () => {
         cancelled = true;
       };
-    }, [userId])
+    }, [userId, paidPosting])
   );
 
   return (
     <ThemedView type="backgroundElement" style={styles.card}>
       <ThemedText type="smallBold">My events</ThemedText>
+      {paidPosting && credits !== null && (
+        <Pressable onPress={() => router.push('/credits')}>
+          <ThemedText type="small" themeColor="textSecondary">
+            {credits} {credits === 1 ? 'post' : 'posts'} left ·{' '}
+            <ThemedText type="small">Buy posts</ThemedText>
+          </ThemedText>
+        </Pressable>
+      )}
       {myEvents.length === 0 ? (
         <ThemedText type="small" themeColor="textSecondary">
           Events you post show up here — drafts included.

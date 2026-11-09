@@ -54,5 +54,9 @@ export const LogEvents = {
   pushRegistered: 'push.registered',
   pushRegisterFailed: 'push.register_failed',
   pushOpened: 'push.opened',
+  creditsLoadFailed: 'credits.load_failed',
+  checkoutStarted: 'checkout.started',
+  checkoutFailed: 'checkout.failed',
+  eventPublished: 'event.published',
   unhandledError: 'error.unhandled',
 } as const;

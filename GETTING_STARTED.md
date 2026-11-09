@@ -36,6 +36,7 @@ Skip this if someone has already done it for the project you're using.
    2. `0002_crew_owner_membership.sql`
    3. `0003_feature_flags_and_admins.sql`
    4. `0004_event_reminders.sql`
+   5. `0005_post_credits.sql`
 3. Optional: run `supabase/seed_sample_data.sql` to add sample events and
    crews.
 4. Make sign-in emails contain a code. The app signs you in with a 6-digit
@@ -86,6 +87,55 @@ To turn reminders off without deploying, an admin sets the
 Push notifications need a **development build**, not Expo Go. Android Expo
 Go can't receive them, and Expo Go can't get a token for your project. See
 section 7.
+
+### Paid posting ($0.99 per event)
+
+Publishing an event uses one post credit. People buy credits on the web with
+Stripe (1 for $0.99, 5 for $4.95, 10 for $9.90); in-app purchase on phones
+comes later. Editing, unpublishing and republishing an event is free.
+
+Running `0005_post_credits.sql` changes nothing at first: paid posting starts
+**off**, and everyone can publish for free as before. Turn it on after these
+steps.
+
+1. Create a Stripe account and stay in **test mode** (the toggle at the top of
+   the dashboard). Copy the secret key (`sk_test_…`) from **Developers → API
+   keys**.
+2. Give the functions the key and your web app's address (from the repo root;
+   the first address is where Stripe sends buyers back):
+   ```bash
+   npx supabase secrets set STRIPE_SECRET_KEY=sk_test_... SITE_URLS=https://<your-vercel-domain>,http://localhost:8082 --remote=<ref>
+   ```
+3. Deploy the two functions:
+   ```bash
+   npx supabase functions deploy create-checkout --no-verify-jwt --remote=<ref>
+   ```
+   ```bash
+   npx supabase functions deploy stripe-webhook --no-verify-jwt --remote=<ref>
+   ```
+4. In Stripe, go to **Developers → Webhooks → Add endpoint**. Use
+   `https://<ref>.supabase.co/functions/v1/stripe-webhook` and pick the events
+   `checkout.session.completed`, `checkout.session.async_payment_succeeded` and
+   `charge.refunded`. Copy the signing secret (`whsec_…`):
+   ```bash
+   npx supabase secrets set STRIPE_WEBHOOK_SECRET=whsec_... --remote=<ref>
+   ```
+5. Turn paid posting on in the SQL Editor:
+   ```sql
+   update public.feature_flags set enabled = true where key = 'events.paid_posting';
+   ```
+6. Test it on the web app: Profile → **Buy posts**, pay with card
+   `4242 4242 4242 4242`, any future date and any CVC. Your posts appear a few
+   seconds after you come back. Then post an event.
+
+To give someone posts by hand (a refund, a promo, testing), in the SQL Editor:
+```sql
+insert into public.post_credit_ledger (profile_id, delta, reason, source)
+values ('<their user id>', 5, 'grant', 'admin');
+```
+
+Going live later: switch Stripe to live mode, then repeat steps 1, 2 and 4
+with the live key and a live webhook.
 
 ## 4. Create your env files
 
