@@ -43,6 +43,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "1d0f3cee-7a9e-4ba6-acd5-7d537bd4de3f"
+      }
+    },
+    "owner": "lineup2step"
   }
 }
