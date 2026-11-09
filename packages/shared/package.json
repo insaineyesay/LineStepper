@@ -1,6 +1,6 @@
 {
   "name": "@linestepper/shared",
-  "version": "0.1.0",
+  "version": "0.0.0",
   "private": true,
   "description": "Code shared by the mobile app, web dashboard and API: feature flags, logger contract, auth contract.",
   "type": "module",
