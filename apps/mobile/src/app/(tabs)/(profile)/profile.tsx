@@ -1,3 +1,4 @@
+import Constants from 'expo-constants';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import {
@@ -5,6 +6,7 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
+  Switch,
   TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -16,7 +18,11 @@ import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, MaxContentWidth, Spacing, TabRootTopInset } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useSession } from '@/lib/auth-context';
+import { fetchPostCredits, usePaidPosting } from '@/lib/credits';
+import { isZip, lookupZip } from '@/lib/location';
+import { useAnalyticsOptOut } from '@/lib/telemetry/consent';
 import { logTap } from '@/lib/log-tap';
+import { unregisterPushAsync } from '@/lib/push';
 import { authClient } from '@/lib/auth';
 import { isSupabaseConfigured, supabase } from '@/lib/supabase';
 import type { Metro, Profile, ProfileRole } from '@/lib/types';
@@ -167,8 +173,8 @@ function BookmarksCard({ userId }: { userId: string }) {
       <ThemedText type="smallBold">My bookmarked events</ThemedText>
       {bookmarks.length === 0 ? (
         <ThemedText type="small" themeColor="textSecondary">
-          Bookmark events from the calendar and they&apos;ll show up here — with
-          reminders coming soon.
+          Bookmark events from the calendar and they&apos;ll show up here. In the
+          app, you&apos;ll get a reminder about a day before each one.
         </ThemedText>
       ) : (
         bookmarks.map((bookmark) => (
@@ -198,6 +204,8 @@ function BookmarksCard({ userId }: { userId: string }) {
 
 function MyEventsCard({ userId }: { userId: string }) {
   const router = useRouter();
+  const paidPosting = usePaidPosting();
+  const [credits, setCredits] = useState<number | null>(null);
   const [myEvents, setMyEvents] = useState<
     { id: string; title: string; starts_at: string; status: string }[]
   >([]);
@@ -205,6 +213,11 @@ function MyEventsCard({ userId }: { userId: string }) {
   useFocusEffect(
     useCallback(() => {
       let cancelled = false;
+      if (paidPosting) {
+        fetchPostCredits().then((n) => {
+          if (!cancelled) setCredits(n);
+        });
+      }
       supabase
         .from('events')
         .select('id, title, starts_at, status')
@@ -218,12 +231,20 @@ function MyEventsCard({ userId }: { userId: string }) {
       return () => {
         cancelled = true;
       };
-    }, [userId])
+    }, [userId, paidPosting])
   );
 
   return (
     <ThemedView type="backgroundElement" style={styles.card}>
       <ThemedText type="smallBold">My events</ThemedText>
+      {paidPosting && credits !== null && (
+        <Pressable onPress={() => router.push('/credits')}>
+          <ThemedText type="small" themeColor="textSecondary">
+            {credits} {credits === 1 ? 'post' : 'posts'} left ·{' '}
+            <ThemedText type="small">Buy posts</ThemedText>
+          </ThemedText>
+        </Pressable>
+      )}
       {myEvents.length === 0 ? (
         <ThemedText type="small" themeColor="textSecondary">
           Events you post show up here — drafts included.
@@ -260,6 +281,7 @@ function ProfileEditor({ userId, email }: { userId: string; email: string | unde
   const [handle, setHandle] = useState('');
   const [role, setRole] = useState<ProfileRole>('dancer');
   const [metroId, setMetroId] = useState<number | null>(null);
+  const [zip, setZip] = useState('');
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -274,6 +296,7 @@ function ProfileEditor({ userId, email }: { userId: string; email: string | unde
       setHandle(profileRow.handle ?? '');
       setRole(profileRow.role);
       setMetroId(profileRow.home_metro_id);
+      setZip(profileRow.zip ?? '');
     }
     if (metroRows) {
       setMetros(metroRows);
@@ -286,8 +309,13 @@ function ProfileEditor({ userId, email }: { userId: string; email: string | unde
   }, [load]);
 
   const save = async () => {
-    setSaving(true);
     setMessage(null);
+    const cleanZip = zip.trim();
+    if (cleanZip && (!isZip(cleanZip) || !(await lookupZip(cleanZip)))) {
+      setMessage(`We don't recognize ZIP ${cleanZip}. Double-check it.`);
+      return;
+    }
+    setSaving(true);
     const cleanHandle = handle.trim().toLowerCase();
     const { error } = await supabase
       .from('profiles')
@@ -296,6 +324,7 @@ function ProfileEditor({ userId, email }: { userId: string; email: string | unde
         handle: cleanHandle || null,
         role,
         home_metro_id: metroId,
+        zip: cleanZip || null,
       })
       .eq('id', userId);
     setSaving(false);
@@ -377,6 +406,17 @@ function ProfileEditor({ userId, email }: { userId: string; email: string | unde
           ))}
         </ThemedView>
 
+        <ThemedText type="small">ZIP code</ThemedText>
+        <TextInput
+          value={zip}
+          onChangeText={(text) => setZip(text.replace(/[^0-9]/g, '').slice(0, 5))}
+          placeholder="Shows you events near home"
+          placeholderTextColor={theme.textSecondary}
+          keyboardType="number-pad"
+          maxLength={5}
+          style={inputStyle}
+        />
+
         {message && (
           <ThemedText type="small" themeColor="textSecondary">
             {message}
@@ -393,12 +433,39 @@ function ProfileEditor({ userId, email }: { userId: string; email: string | unde
 
       <MyEventsCard userId={userId} />
 
-      <Pressable onPress={() => logTap('sign_out', () => void authClient.signOut())}>
+      <Pressable
+        onPress={() =>
+          logTap('sign_out', async () => {
+            // Stop reminders reaching this phone before the session goes away.
+            await unregisterPushAsync();
+            await authClient.signOut();
+          })
+        }>
         <ThemedText type="small" themeColor="textSecondary" style={styles.signOut}>
           Sign out
         </ThemedText>
       </Pressable>
     </>
+  );
+}
+
+/** Usage analytics on/off. Crash reports still go out either way. */
+function PrivacyCard() {
+  const [optedOut, setOptedOut] = useAnalyticsOptOut();
+  return (
+    <ThemedView type="backgroundElement" style={[styles.card, styles.privacyRow]}>
+      <ThemedView type="backgroundElement" style={styles.privacyText}>
+        <ThemedText type="smallBold">Share usage data</ThemedText>
+        <ThemedText type="small" themeColor="textSecondary">
+          Anonymous taps and screens help us improve LineUp2Step. Crash reports are always sent.
+        </ThemedText>
+      </ThemedView>
+      <Switch
+        value={!optedOut}
+        onValueChange={(on) => setOptedOut(!on)}
+        accessibilityLabel="Share usage data"
+      />
+    </ThemedView>
   );
 }
 
@@ -426,6 +493,10 @@ export default function ProfileScreen() {
           ) : (
             <SignInCard />
           )}
+          <PrivacyCard />
+          <ThemedText type="small" themeColor="textSecondary" style={styles.version}>
+            LineUp2Step {Constants.expoConfig?.version ?? ''}
+          </ThemedText>
         </ScrollView>
       </SafeAreaView>
     </ThemedView>
@@ -475,6 +546,19 @@ const styles = StyleSheet.create({
   signOut: {
     textAlign: 'center',
     paddingVertical: Spacing.two,
+  },
+  privacyRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.three,
+  },
+  privacyText: {
+    flex: 1,
+    gap: Spacing.one,
+  },
+  version: {
+    textAlign: 'center',
+    opacity: 0.7,
   },
   loader: {
     paddingTop: Spacing.five,

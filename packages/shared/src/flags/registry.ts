@@ -11,6 +11,7 @@ export const FLAG_REGISTRY = {
   'events.core': { default: true, description: 'Post events with date, time, location, details' },
   'events.reminders': { default: true, description: 'Reminders before an event' },
   'events.change_alerts': { default: true, description: 'Alerts when a date changes or an event is cancelled' },
+  'events.paid_posting': { default: true, description: 'Publishing an event costs one $0.99 post credit' },
 
   // Booking & payments (built, off for MVP1)
   booking: { default: false, description: 'Reserve spots, capacity' },
@@ -37,6 +38,7 @@ export const FLAG_REGISTRY = {
   // Log connectors (B5). stdout is always on and has no flag.
   'log.connector.papertrail': { default: true, description: 'Ship server logs to Papertrail' },
   'log.connector.sentry': { default: true, description: 'Ship warnings and errors to Sentry' },
+  'log.connector.posthog': { default: true, description: 'Send API analytics and errors to PostHog' },
 } as const satisfies Record<string, FlagDefinition>;
 
 export interface FlagDefinition {

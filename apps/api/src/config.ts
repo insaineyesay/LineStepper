@@ -15,6 +15,7 @@ export interface Config {
   flagsEnv?: string;
   papertrail: { token?: string; url: string };
   sentry: { dsn?: string };
+  posthog: { apiKey?: string; host: string };
 }
 
 const blank = (v: string | undefined) => (v && v.trim() !== '' ? v.trim() : undefined);
@@ -39,5 +40,9 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
       url: blank(env.PAPERTRAIL_URL) ?? 'https://logs.collector.solarwinds.com/v1/logs',
     },
     sentry: { dsn: blank(env.SENTRY_DSN) },
+    posthog: {
+      apiKey: blank(env.POSTHOG_API_KEY),
+      host: blank(env.POSTHOG_HOST) ?? 'https://us.i.posthog.com',
+    },
   };
 }

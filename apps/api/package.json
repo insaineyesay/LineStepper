@@ -1,12 +1,13 @@
 {
   "name": "@linestepper/api",
-  "version": "0.1.0",
+  "version": "0.0.0",
   "private": true,
   "type": "module",
   "description": "LineStepper API: feature flags, log ingest, and (later) the domain modules. Deployed to Heroku.",
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsup",
+    "heroku-postbuild": "npm run build",
     "start": "node dist/index.js",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
@@ -19,7 +20,8 @@
     "@supabase/supabase-js": "^2.119.0",
     "fastify": "^5.12.8",
     "jose": "^6.2.15",
-    "pino": "^10.4.0"
+    "pino": "^10.4.0",
+    "posthog-node": "^5.64.0"
   },
   "devDependencies": {
     "@types/node": "^26.6.6",

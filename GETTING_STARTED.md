@@ -35,6 +35,9 @@ Skip this if someone has already done it for the project you're using.
    1. `0001_initial_schema.sql`
    2. `0002_crew_owner_membership.sql`
    3. `0003_feature_flags_and_admins.sql`
+   4. `0004_event_reminders.sql`
+   5. `0005_post_credits.sql`
+   6. `0006_zip_radius_search.sql`, then load the ZIP codes (below)
 3. Optional: run `supabase/seed_sample_data.sql` to add sample events and
    crews.
 4. Make sign-in emails contain a code. The app signs you in with a 6-digit
@@ -45,6 +48,175 @@ Skip this if someone has already done it for the project you're using.
      `Your LineStepper code is {{ .Token }}`.
    - Under **Authentication → Sign In / Providers → Email**, check that
      **Email OTP Length** is `6`.
+
+### Event reminders (push notifications)
+
+Every hour, Supabase sends a push notification for each bookmarked event
+starting in the next 24 hours. These steps are done once per Supabase project.
+`<ref>` is your project ref: the `xxxx` in `https://xxxx.supabase.co`.
+
+1. Run `0004_event_reminders.sql` (step 2 above). It creates the hourly job.
+2. Link the app to an Expo project. Without this, phones can't get a push
+   token. From `apps/mobile`, run `npx eas-cli@latest init` and sign in with
+   your Expo account. It adds `extra.eas.projectId` to `app.json`. Commit
+   that change.
+3. Make up a long random secret. It stops strangers from triggering the
+   reminder job:
+   ```bash
+   openssl rand -hex 32
+   ```
+4. In the SQL Editor, store the secret and your project URL for the job:
+   ```sql
+   select vault.create_secret('https://<ref>.supabase.co', 'project_url');
+   select vault.create_secret('<the secret>', 'reminders_cron_secret');
+   ```
+5. Deploy the function and give it the same secret (from the repo root):
+   ```bash
+   npx supabase login
+   npx supabase functions deploy send-reminders --no-verify-jwt --project-ref <ref>
+   npx supabase secrets set CRON_SECRET=<the secret> --project-ref <ref>
+   ```
+6. Check it runs:
+   ```bash
+   curl -X POST https://<ref>.supabase.co/functions/v1/send-reminders -H "x-cron-secret: <the secret>"
+   ```
+   You should get back something like `{"claimed":0,"sent":0}`.
+
+To turn reminders off without deploying, an admin sets the
+`events.reminders` or `notify.push` flag to off.
+
+Push notifications need a **development build**, not Expo Go. Android Expo
+Go can't receive them, and Expo Go can't get a token for your project. See
+section 7.
+
+### Telemetry: PostHog (analytics and error tracking)
+
+Every event the platform records is listed once in
+`packages/shared/src/telemetry/catalog.ts`, as analytics, a log or an error.
+The apps and the API send events through one logger; adapters decide where
+each kind goes. Today that's PostHog for analytics and errors, and the
+host's log for server logs. Changing vendors means a new adapter, not
+changes across the app.
+
+1. Create a PostHog project (US region). Copy its **Project API key**
+   (`phc_…`). It's meant to be public, like the Supabase anon key.
+2. Apps: set `EXPO_PUBLIC_POSTHOG_KEY=phc_…` in `apps/mobile/.env.production`
+   and in Vercel's environment variables, then redeploy. Add it to
+   `apps/mobile/.env` to see events from development too.
+3. API: set the `POSTHOG_API_KEY` config var on Heroku (below).
+
+People can turn off usage analytics on the Profile tab ("Share usage data").
+Crash and error reports are still sent.
+
+### API on Heroku (server logs, feature flags)
+
+The API (`apps/api`, Node.js) writes its own logs, plus the warnings, errors
+and key events the apps upload (app start, sign-in/out, posting, checkout,
+push), to Heroku's log as one JSON line each, with personal data such as
+emails removed. Its own analytics and errors also go to PostHog. It serves
+the feature flags.
+
+1. In Heroku, create an app (for example `lineup2step-api`). Under
+   **Resources**, use a **Basic** dyno ($7/month), which never sleeps. (Eco
+   dynos are $5 but sleep after 30 idle minutes.)
+2. Under **Settings → Config Vars**, add:
+
+   | Key | Value |
+   |---|---|
+   | `NPM_CONFIG_WORKSPACE` | `@linestepper/api` (installs only the API, not the whole app) |
+   | `NODE_ENV` | `production` |
+   | `CORS_ORIGINS` | your web app's address, e.g. `https://<your-vercel-domain>` |
+   | `AUTH_PROVIDER` | `supabase` |
+   | `SUPABASE_URL` | `https://<ref>.supabase.co` |
+   | `SUPABASE_SERVICE_ROLE_KEY` | Supabase → Project Settings → API → `service_role` key (keep it secret) |
+   | `LOG_LEVEL` | `info` |
+   | `POSTHOG_API_KEY` | the PostHog project key (`phc_…`) |
+
+3. Under **Deploy**, connect the GitHub repo and turn on automatic deploys
+   from `main`, then click **Deploy Branch** once.
+4. Check it: open `https://<your-app>.herokuapp.com/health`. It should show
+   `"ok":true`.
+5. Point the app at it: in Vercel (Settings → Environment Variables) and in
+   `apps/mobile/.env.production`, set
+   `EXPO_PUBLIC_API_URL=https://<your-app>.herokuapp.com`, then redeploy the
+   web app. Phone builds pick it up from `.env.production`.
+
+**Reading the logs:** Heroku dashboard → **More → View logs**, or
+`heroku logs --tail -a <your-app>`. Heroku only keeps the most recent 1,500
+lines, so for search, history and email alerts on errors, add a logging
+add-on from **Resources → Add-ons** (Papertrail is the one this API was built
+for; it's billed through Heroku). With the add-on, leave `PAPERTRAIL_TOKEN`
+empty so logs aren't sent twice.
+
+Crashes inside native code close the app before it can report anything;
+those appear in App Store Connect and Google Play Console once the app is in
+the stores.
+
+### ZIP codes for "near me" search
+
+`0006_zip_radius_search.sql` creates an empty `zip_codes` table. Fill it once
+with the center point of every US ZIP area (about 33,800 rows, from the Census
+Bureau's 2025 ZCTA Gazetteer, public domain):
+
+1. In Supabase, open **Table Editor → zip_codes**.
+2. Click **Insert → Import data from CSV** and choose
+   `supabase/data/zip_codes.csv` from the repo.
+3. Check the import says 33,791 rows.
+
+Events then search by distance (5 to 100 miles) from a ZIP code or the
+phone's location. The location stays on the device apart from being sent
+with the search, rounded to about half a mile; it is never saved.
+Some ZIPs used only for PO boxes or single buildings aren't in the Census
+list; the app asks for a nearby ZIP in that case.
+
+### Paid posting ($0.99 per event)
+
+Publishing an event uses one post credit. People buy credits on the web with
+Stripe (1 for $0.99, 5 for $4.95, 10 for $9.90); in-app purchase on phones
+comes later. Editing, unpublishing and republishing an event is free.
+
+Running `0005_post_credits.sql` changes nothing at first: paid posting starts
+**off**, and everyone can publish for free as before. Turn it on after these
+steps.
+
+1. Create a Stripe account and stay in **test mode** (the toggle at the top of
+   the dashboard). Copy the secret key (`sk_test_…`) from **Developers → API
+   keys**.
+2. Give the functions the key and your web app's address (from the repo root;
+   the first address is where Stripe sends buyers back):
+   ```bash
+   npx supabase secrets set STRIPE_SECRET_KEY=sk_test_... SITE_URLS=https://<your-vercel-domain>,http://localhost:8082 --remote=<ref>
+   ```
+3. Deploy the two functions:
+   ```bash
+   npx supabase functions deploy create-checkout --no-verify-jwt --remote=<ref>
+   ```
+   ```bash
+   npx supabase functions deploy stripe-webhook --no-verify-jwt --remote=<ref>
+   ```
+4. In Stripe, go to **Developers → Webhooks → Add endpoint**. Use
+   `https://<ref>.supabase.co/functions/v1/stripe-webhook` and pick the events
+   `checkout.session.completed`, `checkout.session.async_payment_succeeded` and
+   `charge.refunded`. Copy the signing secret (`whsec_…`):
+   ```bash
+   npx supabase secrets set STRIPE_WEBHOOK_SECRET=whsec_... --remote=<ref>
+   ```
+5. Turn paid posting on in the SQL Editor:
+   ```sql
+   update public.feature_flags set enabled = true where key = 'events.paid_posting';
+   ```
+6. Test it on the web app: Profile → **Buy posts**, pay with card
+   `4242 4242 4242 4242`, any future date and any CVC. Your posts appear a few
+   seconds after you come back. Then post an event.
+
+To give someone posts by hand (a refund, a promo, testing), in the SQL Editor:
+```sql
+insert into public.post_credit_ledger (profile_id, delta, reason, source)
+values ('<their user id>', 5, 'grant', 'admin');
+```
+
+Going live later: switch Stripe to live mode, then repeat steps 1, 2 and 4
+with the live key and a live webhook.
 
 ## 4. Create your env files
 
@@ -158,6 +330,20 @@ Your phone can't reach `localhost` on your computer.
 
 The phone and computer must be on the same Wi-Fi. If the QR code won't
 connect, run `npx expo start --tunnel` from `apps/mobile` instead.
+
+**To test event reminders on a phone**, you need a development build: your
+own version of the app with push notifications turned on. From `apps/mobile`:
+
+- iOS needs a paid Apple Developer account. Register your phone with
+  `npx eas-cli device:create`, then run
+  `npx eas-cli build --profile development --platform ios`. Say yes when it
+  asks to set up push notifications.
+- Android needs Firebase (FCM V1) credentials uploaded to Expo first. See
+  https://docs.expo.dev/push-notifications/fcm-credentials/. Then run
+  `npx eas-cli build --profile development --platform android`.
+
+Install the build on your phone, run `npm run dev:mobile`, and open the
+project from the build instead of Expo Go.
 
 ## 8. Everyday commands (from the repo root)
 

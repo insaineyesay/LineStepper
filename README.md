@@ -86,10 +86,10 @@ table (changed by admins at runtime). The API enforces flags: a route behind
 
 ## Deploying
 
-- **API (Heroku):** the root `Procfile` and the `heroku-postbuild` script
-  build and start `apps/api`. Set the variables from `apps/api/.env.example`
-  as config vars. If you use the Papertrail Heroku add-on (which drains
-  stdout), leave `PAPERTRAIL_TOKEN` empty so logs aren't sent twice.
+- **API (Heroku):** the root `Procfile` and the `heroku-postbuild` scripts
+  build and start `apps/api`; the `NPM_CONFIG_WORKSPACE=@linestepper/api`
+  config var keeps the install to the API alone. Step-by-step setup and
+  config vars: GETTING_STARTED.md, "API on Heroku".
 - **Mobile web (Vercel):** set the project's Root Directory to `apps/mobile`.
   `vercel.json` moved there with the app.
 
@@ -98,7 +98,7 @@ table (changed by admins at runtime). The API enforces flags: a route behind
 `profiles` (1:1 with auth users, auto-created on signup) · `crews` +
 `crew_members` (join requests gated by the crew's `is_joinable` paid flag) ·
 `events` (organizer-owned, published/draft/cancelled) · `event_bookmarks`
-(drives reminders) · `follows` · `subscriptions` (Stripe mirror, written only
+(drives reminders) · `push_tokens` (one per device, for reminders) · `post_credit_ledger` (post credits bought and spent) · `zip_codes` (US ZIP centers for radius search) · `follows` · `subscriptions` (Stripe mirror, written only
 by webhooks) · `metros` (launch-region filter list).
 
 ## Roadmap
@@ -108,12 +108,16 @@ by webhooks) · `metros` (launch-region filter list).
 1. **Auth** — Apple / Google / Facebook sign-in (`expo-apple-authentication`,
    `@react-native-google-signin`, Facebook via Supabase OAuth), profile setup
    flow (handle, home metro, role).
-2. **Events v1** — event detail screen, metro + date filters, bookmarking.
+2. **Events v1** — event detail screen, date filters, radius search (ZIP or
+   phone location, 5–100 mi), bookmarking.
 3. **Reminders** — Expo push notifications; Supabase cron + edge function
-   sends reminders for bookmarked events.
+   sends reminders for bookmarked events (built; setup in
+   GETTING_STARTED.md, "Event reminders").
 4. **Crews v1** — crew detail, join requests, member management.
-5. **Paid side** — web dashboard (Next.js on Vercel) for organizer/DJ/crew
-   billing via Stripe; event posting gated on active subscription tier.
+5. **Paid side** — per the client's PRD (v0.2): $0.99 per event post. Post
+   credits, the publish gate and Stripe checkout on the web are built (setup
+   in GETTING_STARTED.md, "Paid posting"); Apple / Google in-app purchase
+   needs the store accounts. The $0.99 app price is set in the stores.
 6. **Polish & beta** — replace placeholder tab icons and app icon/splash,
    TestFlight + Play internal testing with a founding crew.
 

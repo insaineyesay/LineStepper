@@ -1,3 +1,4 @@
+import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, TextInput } from 'react-native';
 
@@ -8,6 +9,8 @@ import { ThemedView } from './themed-view';
 
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { fetchPostCredits, publishEvent, usePaidPosting } from '@/lib/credits';
+import { isZip, lookupZip } from '@/lib/location';
 import { supabase } from '@/lib/supabase';
 import type { DanceEvent, EventStatus, Metro } from '@/lib/types';
 
@@ -28,6 +31,8 @@ function toLocalDateInput(iso: string) {
 
 export function EventForm({ userId, existing, onSaved }: EventFormProps) {
   const theme = useTheme();
+  const router = useRouter();
+  const paidPosting = usePaidPosting();
   const initial = existing ? toLocalDateInput(existing.starts_at) : { date: '', time: '' };
 
   const [title, setTitle] = useState(existing?.title ?? '');
@@ -37,6 +42,7 @@ export function EventForm({ userId, existing, onSaved }: EventFormProps) {
   const [venueName, setVenueName] = useState(existing?.venue_name ?? '');
   const [address, setAddress] = useState(existing?.address ?? '');
   const [city, setCity] = useState(existing?.city ?? '');
+  const [zip, setZip] = useState(existing?.zip ?? '');
   const [metroId, setMetroId] = useState<number | null>(existing?.metro_id ?? null);
   const [priceText, setPriceText] = useState(existing?.price_text ?? '');
   const [ticketUrl, setTicketUrl] = useState(existing?.ticket_url ?? '');
@@ -44,6 +50,27 @@ export function EventForm({ userId, existing, onSaved }: EventFormProps) {
   const [metros, setMetros] = useState<Metro[]>([]);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  // Set once the event exists, so saving again (say, after buying a post)
+  // updates it instead of creating a second copy.
+  const [savedId, setSavedId] = useState<string | null>(existing?.id ?? null);
+  const [savedStatus, setSavedStatus] = useState<EventStatus | null>(existing?.status ?? null);
+  const [credits, setCredits] = useState<number | null>(null);
+  const [needsCredits, setNeedsCredits] = useState(false);
+
+  useEffect(() => {
+    if (!paidPosting) return;
+    let cancelled = false;
+    fetchPostCredits().then((n) => {
+      if (!cancelled) setCredits(n);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [paidPosting]);
+
+  // Publishing for the first time spends a post, which only the database's
+  // publish_event() can do; everything else is a normal save.
+  const willSpendPost = paidPosting && status === 'published' && savedStatus !== 'published';
 
   useEffect(() => {
     let cancelled = false;
@@ -77,6 +104,20 @@ export function EventForm({ userId, existing, onSaved }: EventFormProps) {
       return;
     }
 
+    // The ZIP places the event for "near me" searches. Required for new events;
+    // older events without one fall back to their area.
+    const cleanZip = zip.trim();
+    if (cleanZip || !existing) {
+      if (!isZip(cleanZip)) {
+        setMessage('Enter the venue’s 5-digit ZIP code so dancers nearby can find it.');
+        return;
+      }
+      if (!(await lookupZip(cleanZip))) {
+        setMessage(`We don't recognize ZIP ${cleanZip}. Double-check it.`);
+        return;
+      }
+    }
+
     const payload = {
       title: title.trim(),
       description: description.trim() || null,
@@ -84,23 +125,24 @@ export function EventForm({ userId, existing, onSaved }: EventFormProps) {
       venue_name: venueName.trim() || null,
       address: address.trim() || null,
       city: city.trim() || null,
+      zip: cleanZip || null,
       metro_id: metroId,
       price_text: priceText.trim() || null,
       ticket_url: ticketUrl.trim() || null,
-      status,
+      // When this save spends a post, store the details first without
+      // publishing, then publish through publishEvent() below.
+      status: willSpendPost ? (savedStatus ?? 'draft') : status,
     };
 
     setSaving(true);
-    if (existing) {
-      const { error } = await supabase
-        .from('events')
-        .update(payload)
-        .eq('id', existing.id);
-      setSaving(false);
+    setNeedsCredits(false);
+    let id = savedId;
+    if (id) {
+      const { error } = await supabase.from('events').update(payload).eq('id', id);
       if (error) {
+        setSaving(false);
         setMessage(error.message);
-      } else {
-        onSaved(existing.id);
+        return;
       }
     } else {
       const { data, error } = await supabase
@@ -108,13 +150,34 @@ export function EventForm({ userId, existing, onSaved }: EventFormProps) {
         .insert({ ...payload, organizer_id: userId })
         .select('id')
         .single();
-      setSaving(false);
       if (error || !data) {
+        setSaving(false);
         setMessage(error?.message ?? 'Something went wrong saving the event.');
-      } else {
-        onSaved(data.id);
+        return;
       }
+      id = data.id;
+      setSavedId(data.id);
     }
+    setSavedStatus(payload.status);
+
+    if (willSpendPost && id) {
+      const result = await publishEvent(id);
+      if (result === 'no_credits') {
+        setSaving(false);
+        setNeedsCredits(true);
+        setCredits(0);
+        setMessage('Your event is saved as a draft. Publishing it uses one post ($0.99).');
+        return;
+      }
+      if (result !== 'published') {
+        setSaving(false);
+        setMessage(result.error);
+        return;
+      }
+      setSavedStatus('published');
+    }
+    setSaving(false);
+    if (id) onSaved(id);
   };
 
   const inputStyle = [
@@ -196,6 +259,17 @@ export function EventForm({ userId, existing, onSaved }: EventFormProps) {
         style={inputStyle}
       />
 
+      <ThemedText type="small">ZIP code</ThemedText>
+      <TextInput
+        value={zip}
+        onChangeText={(text) => setZip(text.replace(/[^0-9]/g, '').slice(0, 5))}
+        placeholder="23510"
+        placeholderTextColor={theme.textSecondary}
+        keyboardType="number-pad"
+        maxLength={5}
+        style={inputStyle}
+      />
+
       <ThemedText type="small">Area</ThemedText>
       <ThemedView type="backgroundElement" style={styles.chipRow}>
         {metros.map((metro) => (
@@ -249,6 +323,13 @@ export function EventForm({ userId, existing, onSaved }: EventFormProps) {
         )}
       </ThemedView>
 
+      {willSpendPost && credits !== null && !needsCredits && (
+        <ThemedText type="small" themeColor="textSecondary">
+          {credits > 0
+            ? `Publishing uses 1 of your ${credits} ${credits === 1 ? 'post' : 'posts'}.`
+            : 'Publishing uses one post ($0.99). You have none left.'}
+        </ThemedText>
+      )}
       {message && (
         <ThemedText type="small" themeColor="textSecondary">
           {message}
@@ -257,10 +338,23 @@ export function EventForm({ userId, existing, onSaved }: EventFormProps) {
       {saving ? (
         <ActivityIndicator />
       ) : (
-        <Button
-          label={existing ? 'Save changes' : status === 'published' ? 'Post event' : 'Save draft'}
-          onPress={save}
-        />
+        <>
+          <Button
+            label={
+              willSpendPost
+                ? 'Publish event'
+                : savedId
+                  ? 'Save changes'
+                  : status === 'published'
+                    ? 'Post event'
+                    : 'Save draft'
+            }
+            onPress={save}
+          />
+          {willSpendPost && (needsCredits || credits === 0) && (
+            <Button label="Buy posts" logName="buy_posts_from_form" onPress={() => router.push('/credits')} />
+          )}
+        </>
       )}
     </ThemedView>
   );

@@ -1,6 +1,6 @@
 {
   "name": "@linestepper/shared",
-  "version": "0.1.0",
+  "version": "0.0.0",
   "private": true,
   "description": "Code shared by the mobile app, web dashboard and API: feature flags, logger contract, auth contract.",
   "type": "module",
@@ -10,7 +10,8 @@
     ".": "./src/index.ts",
     "./flags": "./src/flags/index.ts",
     "./logging": "./src/logging/index.ts",
-    "./auth": "./src/auth/index.ts"
+    "./auth": "./src/auth/index.ts",
+    "./telemetry": "./src/telemetry/index.ts"
   },
   "sideEffects": false,
   "scripts": {

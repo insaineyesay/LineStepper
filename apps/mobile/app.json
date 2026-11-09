@@ -2,7 +2,7 @@
   "expo": {
     "name": "LineStepper",
     "slug": "LineStepper",
-    "version": "1.0.0",
+    "version": "0.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "linestepper",
@@ -32,11 +32,30 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 76
         }
-      ]
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#208AEF"
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "LineUp2Step uses your location to show line dancing events near you."
+        }
+      ],
+      "expo-localization"
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "1d0f3cee-7a9e-4ba6-acd5-7d537bd4de3f"
+      }
+    },
+    "owner": "lineup2step"
   }
 }
