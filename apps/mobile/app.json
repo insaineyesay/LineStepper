@@ -44,7 +44,8 @@
         {
           "locationWhenInUsePermission": "LineUp2Step uses your location to show line dancing events near you."
         }
-      ]
+      ],
+      "expo-localization"
     ],
     "experiments": {
       "typedRoutes": true,

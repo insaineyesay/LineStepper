@@ -53,7 +53,7 @@ async function main() {
 
   // Heroku sends SIGTERM on restart and gives 30s; flush logs before exiting.
   const shutdown = async (signal: string) => {
-    logger.info('app.shutdown', { signal });
+    logger.info(LogEvents.appShutdown, { signal });
     await app.close();
     await bus.close();
     process.exit(0);

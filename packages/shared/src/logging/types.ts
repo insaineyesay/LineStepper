@@ -41,6 +41,7 @@ export interface LogContext {
 export const LogEvents = {
   appStart: 'app.start',
   appBackground: 'app.background',
+  appShutdown: 'app.shutdown',
   screenView: 'screen.view',
   uiTap: 'ui.tap',
   apiRequest: 'api.request',
@@ -48,6 +49,7 @@ export const LogEvents = {
   authSignOut: 'auth.sign_out',
   authError: 'auth.error',
   flagsLoaded: 'flags.loaded',
+  flagsLoadFailed: 'flags.load_failed',
   flagChanged: 'flags.changed',
   flagDenied: 'flags.denied',
   logsDropped: 'logs.dropped',

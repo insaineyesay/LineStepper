@@ -4,6 +4,7 @@ import type { Config } from '../config';
 import { LogBus } from './bus';
 import type { LogConnector } from './connector';
 import { papertrailConnector } from './connectors/papertrail';
+import { posthogConnector } from './connectors/posthog';
 import { sentryConnector } from './connectors/sentry';
 import { stdoutConnector } from './connectors/stdout';
 
@@ -15,6 +16,9 @@ export function buildConnectors(config: Config): LogConnector[] {
   const connectors: LogConnector[] = [stdoutConnector()];
   if (config.papertrail.token) {
     connectors.push(papertrailConnector({ token: config.papertrail.token, url: config.papertrail.url }));
+  }
+  if (config.posthog.apiKey) {
+    connectors.push(posthogConnector({ apiKey: config.posthog.apiKey, host: config.posthog.host }));
   }
   if (config.sentry.dsn) {
     connectors.push(sentryConnector({ dsn: config.sentry.dsn, env: config.env, release: config.appVersion }));

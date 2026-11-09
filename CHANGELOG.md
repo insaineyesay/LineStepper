@@ -34,9 +34,15 @@ Add a line under "Unreleased" in the same pull request as the change.
 - Crash reporting: errors the app doesn't handle, and screens that fail to
   draw, are sent to the API with the app version and platform. A failed
   screen shows "Something went wrong" with a Try again button.
-- The API can run on Heroku (setup in GETTING_STARTED.md). The app uploads
-  warnings, errors and a few key events there; taps and screen views stay
-  on the device.
+- Telemetry layer: one catalog of every event (analytics, logs, errors)
+  shared by the apps and the API, with plug-in adapters. PostHog is the
+  first: taps, screens and key actions as analytics, crashes as error
+  tracking.
+- "Share usage data" switch on the Profile tab. Crash reports are still
+  sent when it's off.
+- The API can run on Heroku (setup in GETTING_STARTED.md). Server logs and
+  the apps' warnings, errors and key events go to Heroku's log.
+- The app version is shown at the bottom of the Profile tab.
 
 ### Changed
 - The tab bar stays on every screen, and tapping a tab returns to its first

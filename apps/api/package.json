@@ -20,7 +20,8 @@
     "@supabase/supabase-js": "^2.119.0",
     "fastify": "^5.12.8",
     "jose": "^6.2.15",
-    "pino": "^10.4.0"
+    "pino": "^10.4.0",
+    "posthog-node": "^5.64.0"
   },
   "devDependencies": {
     "@types/node": "^26.6.6",

@@ -6,6 +6,7 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
+  Switch,
   TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -19,6 +20,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { useSession } from '@/lib/auth-context';
 import { fetchPostCredits, usePaidPosting } from '@/lib/credits';
 import { isZip, lookupZip } from '@/lib/location';
+import { useAnalyticsOptOut } from '@/lib/telemetry/consent';
 import { logTap } from '@/lib/log-tap';
 import { unregisterPushAsync } from '@/lib/push';
 import { authClient } from '@/lib/auth';
@@ -443,10 +445,27 @@ function ProfileEditor({ userId, email }: { userId: string; email: string | unde
           Sign out
         </ThemedText>
       </Pressable>
-      <ThemedText type="small" themeColor="textSecondary" style={styles.version}>
-        LineUp2Step {Constants.expoConfig?.version ?? ''}
-      </ThemedText>
     </>
+  );
+}
+
+/** Usage analytics on/off. Crash reports still go out either way. */
+function PrivacyCard() {
+  const [optedOut, setOptedOut] = useAnalyticsOptOut();
+  return (
+    <ThemedView type="backgroundElement" style={[styles.card, styles.privacyRow]}>
+      <ThemedView type="backgroundElement" style={styles.privacyText}>
+        <ThemedText type="smallBold">Share usage data</ThemedText>
+        <ThemedText type="small" themeColor="textSecondary">
+          Anonymous taps and screens help us improve LineUp2Step. Crash reports are always sent.
+        </ThemedText>
+      </ThemedView>
+      <Switch
+        value={!optedOut}
+        onValueChange={(on) => setOptedOut(!on)}
+        accessibilityLabel="Share usage data"
+      />
+    </ThemedView>
   );
 }
 
@@ -474,6 +493,10 @@ export default function ProfileScreen() {
           ) : (
             <SignInCard />
           )}
+          <PrivacyCard />
+          <ThemedText type="small" themeColor="textSecondary" style={styles.version}>
+            LineUp2Step {Constants.expoConfig?.version ?? ''}
+          </ThemedText>
         </ScrollView>
       </SafeAreaView>
     </ThemedView>
@@ -523,6 +546,15 @@ const styles = StyleSheet.create({
   signOut: {
     textAlign: 'center',
     paddingVertical: Spacing.two,
+  },
+  privacyRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.three,
+  },
+  privacyText: {
+    flex: 1,
+    gap: Spacing.one,
   },
   version: {
     textAlign: 'center',

@@ -89,19 +89,36 @@ Push notifications need a **development build**, not Expo Go. Android Expo
 Go can't receive them, and Expo Go can't get a token for your project. See
 section 7.
 
-### API on Heroku (logs, crash reports, feature flags)
+### Telemetry: PostHog (analytics and error tracking)
 
-The API (`apps/api`, Node.js) receives the app's warnings, errors and a few
-key events (app start, sign-in/out, posting, checkout, push), and serves the
-feature flags. Taps and screen views stay on the device. Everything it
-receives is written to Heroku's log as one JSON line, with personal data such
-as emails removed.
+Every event the platform records is listed once in
+`packages/shared/src/telemetry/catalog.ts`, as analytics, a log or an error.
+The apps and the API send events through one logger; adapters decide where
+each kind goes. Today that's PostHog for analytics and errors, and the
+host's log for server logs. Changing vendors means a new adapter, not
+changes across the app.
+
+1. Create a PostHog project (US region). Copy its **Project API key**
+   (`phc_…`). It's meant to be public, like the Supabase anon key.
+2. Apps: set `EXPO_PUBLIC_POSTHOG_KEY=phc_…` in `apps/mobile/.env.production`
+   and in Vercel's environment variables, then redeploy. Add it to
+   `apps/mobile/.env` to see events from development too.
+3. API: set the `POSTHOG_API_KEY` config var on Heroku (below).
+
+People can turn off usage analytics on the Profile tab ("Share usage data").
+Crash and error reports are still sent.
+
+### API on Heroku (server logs, feature flags)
+
+The API (`apps/api`, Node.js) writes its own logs, plus the warnings, errors
+and key events the apps upload (app start, sign-in/out, posting, checkout,
+push), to Heroku's log as one JSON line each, with personal data such as
+emails removed. Its own analytics and errors also go to PostHog. It serves
+the feature flags.
 
 1. In Heroku, create an app (for example `lineup2step-api`). Under
-   **Resources**, use an **Eco** dyno ($5/month). Eco dynos sleep after 30
-   minutes without traffic, so the first request after that takes a few
-   seconds; the app's log uploads simply retry. A **Basic** dyno ($7) never
-   sleeps.
+   **Resources**, use a **Basic** dyno ($7/month), which never sleeps. (Eco
+   dynos are $5 but sleep after 30 idle minutes.)
 2. Under **Settings → Config Vars**, add:
 
    | Key | Value |
@@ -113,6 +130,7 @@ as emails removed.
    | `SUPABASE_URL` | `https://<ref>.supabase.co` |
    | `SUPABASE_SERVICE_ROLE_KEY` | Supabase → Project Settings → API → `service_role` key (keep it secret) |
    | `LOG_LEVEL` | `info` |
+   | `POSTHOG_API_KEY` | the PostHog project key (`phc_…`) |
 
 3. Under **Deploy**, connect the GitHub repo and turn on automatic deploys
    from `main`, then click **Deploy Branch** once.
