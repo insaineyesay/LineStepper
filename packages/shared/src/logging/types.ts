@@ -58,5 +58,6 @@ export const LogEvents = {
   checkoutStarted: 'checkout.started',
   checkoutFailed: 'checkout.failed',
   eventPublished: 'event.published',
+  locationFailed: 'location.failed',
   unhandledError: 'error.unhandled',
 } as const;

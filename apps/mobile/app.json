@@ -38,6 +38,12 @@
         {
           "color": "#208AEF"
         }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "LineUp2Step uses your location to show line dancing events near you."
+        }
       ]
     ],
     "experiments": {

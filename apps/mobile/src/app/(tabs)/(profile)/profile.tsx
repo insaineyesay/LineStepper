@@ -17,6 +17,7 @@ import { BottomTabInset, MaxContentWidth, Spacing, TabRootTopInset } from '@/con
 import { useTheme } from '@/hooks/use-theme';
 import { useSession } from '@/lib/auth-context';
 import { fetchPostCredits, usePaidPosting } from '@/lib/credits';
+import { isZip, lookupZip } from '@/lib/location';
 import { logTap } from '@/lib/log-tap';
 import { unregisterPushAsync } from '@/lib/push';
 import { authClient } from '@/lib/auth';
@@ -277,6 +278,7 @@ function ProfileEditor({ userId, email }: { userId: string; email: string | unde
   const [handle, setHandle] = useState('');
   const [role, setRole] = useState<ProfileRole>('dancer');
   const [metroId, setMetroId] = useState<number | null>(null);
+  const [zip, setZip] = useState('');
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -291,6 +293,7 @@ function ProfileEditor({ userId, email }: { userId: string; email: string | unde
       setHandle(profileRow.handle ?? '');
       setRole(profileRow.role);
       setMetroId(profileRow.home_metro_id);
+      setZip(profileRow.zip ?? '');
     }
     if (metroRows) {
       setMetros(metroRows);
@@ -303,8 +306,13 @@ function ProfileEditor({ userId, email }: { userId: string; email: string | unde
   }, [load]);
 
   const save = async () => {
-    setSaving(true);
     setMessage(null);
+    const cleanZip = zip.trim();
+    if (cleanZip && (!isZip(cleanZip) || !(await lookupZip(cleanZip)))) {
+      setMessage(`We don't recognize ZIP ${cleanZip}. Double-check it.`);
+      return;
+    }
+    setSaving(true);
     const cleanHandle = handle.trim().toLowerCase();
     const { error } = await supabase
       .from('profiles')
@@ -313,6 +321,7 @@ function ProfileEditor({ userId, email }: { userId: string; email: string | unde
         handle: cleanHandle || null,
         role,
         home_metro_id: metroId,
+        zip: cleanZip || null,
       })
       .eq('id', userId);
     setSaving(false);
@@ -393,6 +402,17 @@ function ProfileEditor({ userId, email }: { userId: string; email: string | unde
             />
           ))}
         </ThemedView>
+
+        <ThemedText type="small">ZIP code</ThemedText>
+        <TextInput
+          value={zip}
+          onChangeText={(text) => setZip(text.replace(/[^0-9]/g, '').slice(0, 5))}
+          placeholder="Shows you events near home"
+          placeholderTextColor={theme.textSecondary}
+          keyboardType="number-pad"
+          maxLength={5}
+          style={inputStyle}
+        />
 
         {message && (
           <ThemedText type="small" themeColor="textSecondary">
