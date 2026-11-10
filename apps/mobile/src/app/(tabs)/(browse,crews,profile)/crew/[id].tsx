@@ -13,27 +13,18 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useSession } from '@/lib/auth-context';
-import { isSupabaseConfigured, supabase } from '@/lib/supabase';
-import type { Crew } from '@/lib/types';
+import { isBackendConfigured } from '@/data/backend';
+import {
+  approveMember,
+  getCrewDetail,
+  listCrewMembers,
+  removeMembership,
+  requestToJoin,
+  type CrewDetail,
+  type CrewMember,
+} from '@/data/crews';
 
-interface CrewDetail extends Crew {
-  metro: { name: string; state: string } | null;
-  owner: { id: string; display_name: string | null; handle: string | null } | null;
-}
-
-interface MemberRow {
-  profile_id: string;
-  role: 'owner' | 'admin' | 'member';
-  status: 'pending' | 'active' | 'removed';
-  profile: {
-    id: string;
-    display_name: string | null;
-    handle: string | null;
-    role: string;
-  } | null;
-}
-
-function memberName(m: MemberRow) {
+function memberName(m: CrewMember) {
   return m.profile?.display_name ?? m.profile?.handle ?? 'Dancer';
 }
 
@@ -43,36 +34,26 @@ export default function CrewDetailScreen() {
   const { session } = useSession();
   const [crew, setCrew] = useState<CrewDetail | null>(null);
   const [notFound, setNotFound] = useState(false);
-  const [members, setMembers] = useState<MemberRow[]>([]);
-  const [myMembership, setMyMembership] = useState<MemberRow | null>(null);
+  const [members, setMembers] = useState<CrewMember[]>([]);
+  const [myMembership, setMyMembership] = useState<CrewMember | null>(null);
   const [busy, setBusy] = useState(false);
 
   const isOwner = Boolean(session && crew && crew.owner_id === session.user.id);
 
   const load = useCallback(async () => {
-    if (!isSupabaseConfigured || !id) {
+    if (!isBackendConfigured || !id) {
       setNotFound(true);
       return;
     }
-    const { data, error } = await supabase
-      .from('crews')
-      .select(
-        '*, metro:metros(name, state), owner:profiles!crews_owner_id_fkey(id, display_name, handle)'
-      )
-      .eq('id', id)
-      .single();
-    if (error || !data) {
+    const { data, error } = await getCrewDetail(id);
+    if (error) {
       setNotFound(true);
       return;
     }
-    setCrew(data as CrewDetail);
+    setCrew(data);
 
-    const { data: memberRows } = await supabase
-      .from('crew_members')
-      .select('profile_id, role, status, profile:profiles(id, display_name, handle, role)')
-      .eq('crew_id', id);
-    if (memberRows) {
-      const rows = memberRows as unknown as MemberRow[];
+    const { data: rows } = await listCrewMembers(id);
+    if (rows) {
       setMembers(rows);
       setMyMembership(
         session ? (rows.find((m) => m.profile_id === session.user.id) ?? null) : null
@@ -90,12 +71,7 @@ export default function CrewDetailScreen() {
       return;
     }
     setBusy(true);
-    await supabase.from('crew_members').insert({
-      crew_id: crew.id,
-      profile_id: session.user.id,
-      role: 'member',
-      status: 'pending',
-    });
+    await requestToJoin(crew.id, session.user.id);
     await load();
     setBusy(false);
   };
@@ -105,11 +81,7 @@ export default function CrewDetailScreen() {
       return;
     }
     setBusy(true);
-    await supabase
-      .from('crew_members')
-      .delete()
-      .eq('crew_id', crew.id)
-      .eq('profile_id', session.user.id);
+    await removeMembership(crew.id, session.user.id);
     await load();
     setBusy(false);
   };
@@ -119,11 +91,7 @@ export default function CrewDetailScreen() {
       return;
     }
     setBusy(true);
-    await supabase
-      .from('crew_members')
-      .update({ status: 'active' })
-      .eq('crew_id', crew.id)
-      .eq('profile_id', profileId);
+    await approveMember(crew.id, profileId);
     await load();
     setBusy(false);
   };
@@ -133,11 +101,7 @@ export default function CrewDetailScreen() {
       return;
     }
     setBusy(true);
-    await supabase
-      .from('crew_members')
-      .delete()
-      .eq('crew_id', crew.id)
-      .eq('profile_id', profileId);
+    await removeMembership(crew.id, profileId);
     await load();
     setBusy(false);
   };

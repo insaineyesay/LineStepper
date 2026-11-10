@@ -7,8 +7,10 @@ import { Platform } from 'react-native';
 
 import { LogEvents } from '@linestepper/shared';
 
+import { isBackendConfigured } from '@/data/backend';
+import { registerPushToken, removePushToken } from '@/data/push-tokens';
+
 import { logger } from './logger';
-import { isSupabaseConfigured, supabase } from './supabase';
 
 /**
  * Push notifications for event reminders. The server side is
@@ -60,7 +62,7 @@ export async function getPushStatusAsync(): Promise<PushStatus> {
  * otherwise it only registers when permission was already given.
  */
 export async function registerForPushAsync({ prompt }: { prompt: boolean }): Promise<RegisterResult> {
-  if (!isSupabaseConfigured) return 'unavailable';
+  if (!isBackendConfigured) return 'unavailable';
   try {
     // Android 13+ shows the permission prompt only once a channel exists.
     if (Platform.OS === 'android') {
@@ -84,10 +86,7 @@ export async function registerForPushAsync({ prompt }: { prompt: boolean }): Pro
     }
 
     const { data: token } = await Notifications.getExpoPushTokenAsync({ projectId });
-    const { error } = await supabase.rpc('register_push_token', {
-      p_token: token,
-      p_platform: Platform.OS,
-    });
+    const { error } = await registerPushToken(token, Platform.OS);
     if (error) throw new Error(error.message);
 
     registeredToken = token;
@@ -107,7 +106,7 @@ export async function unregisterPushAsync(): Promise<void> {
   const token = registeredToken;
   if (!token) return;
   registeredToken = null;
-  const { error } = await supabase.from('push_tokens').delete().eq('token', token);
+  const { error } = await removePushToken(token);
   if (error) logger.warn(LogEvents.pushRegisterFailed, { message: error.message, op: 'unregister' });
 }
 

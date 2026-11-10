@@ -7,7 +7,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useSession } from '@/lib/auth-context';
-import { supabase } from '@/lib/supabase';
+import { getCrew } from '@/data/crews';
 import type { Crew } from '@/lib/types';
 
 export default function EditCrewScreen() {
@@ -22,20 +22,15 @@ export default function EditCrewScreen() {
       return;
     }
     let cancelled = false;
-    supabase
-      .from('crews')
-      .select('*')
-      .eq('id', id)
-      .single()
-      .then(({ data, error }) => {
-        if (!cancelled) {
-          if (error || !data) {
-            setNotFound(true);
-          } else {
-            setCrew(data);
-          }
+    getCrew(id).then(({ data, error }) => {
+      if (!cancelled) {
+        if (error) {
+          setNotFound(true);
+        } else {
+          setCrew(data);
         }
-      });
+      }
+    });
     return () => {
       cancelled = true;
     };

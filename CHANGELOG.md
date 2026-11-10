@@ -45,6 +45,10 @@ Add a line under "Unreleased" in the same pull request as the change.
 - The app version is shown at the bottom of the Profile tab.
 
 ### Changed
+- Internal: screens and components get data only through one data layer
+  (`apps/mobile/src/data`, one module per area), so each area can move from
+  direct database access to the API without screen changes. A test blocks
+  direct database calls anywhere else.
 - The tab bar stays on every screen, and tapping a tab returns to its first
   screen.
 - The app opens on the Events tab.

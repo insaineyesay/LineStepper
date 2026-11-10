@@ -24,7 +24,11 @@ import { useAnalyticsOptOut } from '@/lib/telemetry/consent';
 import { logTap } from '@/lib/log-tap';
 import { unregisterPushAsync } from '@/lib/push';
 import { authClient } from '@/lib/auth';
-import { isSupabaseConfigured, supabase } from '@/lib/supabase';
+import { isBackendConfigured } from '@/data/backend';
+import { listBookmarks, type BookmarkedEvent } from '@/data/bookmarks';
+import { listMyEvents } from '@/data/events';
+import { getProfile, updateProfile } from '@/data/profiles';
+import { listMetros } from '@/data/reference';
 import type { Metro, Profile, ProfileRole } from '@/lib/types';
 
 const ROLE_OPTIONS: { value: ProfileRole; label: string }[] = [
@@ -132,16 +136,6 @@ function SignInCard() {
   );
 }
 
-interface BookmarkedEvent {
-  event_id: string;
-  events: {
-    id: string;
-    title: string;
-    starts_at: string;
-    venue_name: string | null;
-    city: string | null;
-  } | null;
-}
 
 function BookmarksCard({ userId }: { userId: string }) {
   const router = useRouter();
@@ -150,18 +144,11 @@ function BookmarksCard({ userId }: { userId: string }) {
   useFocusEffect(
     useCallback(() => {
       let cancelled = false;
-      supabase
-        .from('event_bookmarks')
-        .select('event_id, events(id, title, starts_at, venue_name, city)')
-        .eq('profile_id', userId)
-        .then(({ data }) => {
-          if (!cancelled && data) {
-            const upcoming = (data as unknown as BookmarkedEvent[])
-              .filter((b) => b.events)
-              .sort((a, b) => a.events!.starts_at.localeCompare(b.events!.starts_at));
-            setBookmarks(upcoming);
-          }
-        });
+      listBookmarks(userId).then(({ data }) => {
+        if (!cancelled && data) {
+          setBookmarks(data);
+        }
+      });
       return () => {
         cancelled = true;
       };
@@ -218,16 +205,11 @@ function MyEventsCard({ userId }: { userId: string }) {
           if (!cancelled) setCredits(n);
         });
       }
-      supabase
-        .from('events')
-        .select('id, title, starts_at, status')
-        .eq('organizer_id', userId)
-        .order('starts_at', { ascending: true })
-        .then(({ data }) => {
-          if (!cancelled && data) {
-            setMyEvents(data);
-          }
-        });
+      listMyEvents(userId).then(({ data }) => {
+        if (!cancelled && data) {
+          setMyEvents(data);
+        }
+      });
       return () => {
         cancelled = true;
       };
@@ -287,8 +269,8 @@ function ProfileEditor({ userId, email }: { userId: string; email: string | unde
 
   const load = useCallback(async () => {
     const [{ data: profileRow }, { data: metroRows }] = await Promise.all([
-      supabase.from('profiles').select('*').eq('id', userId).single(),
-      supabase.from('metros').select('*').order('id'),
+      getProfile(userId),
+      listMetros(),
     ]);
     if (profileRow) {
       setProfile(profileRow);
@@ -317,16 +299,13 @@ function ProfileEditor({ userId, email }: { userId: string; email: string | unde
     }
     setSaving(true);
     const cleanHandle = handle.trim().toLowerCase();
-    const { error } = await supabase
-      .from('profiles')
-      .update({
-        display_name: displayName.trim() || null,
-        handle: cleanHandle || null,
-        role,
-        home_metro_id: metroId,
-        zip: cleanZip || null,
-      })
-      .eq('id', userId);
+    const { error } = await updateProfile(userId, {
+      display_name: displayName.trim() || null,
+      handle: cleanHandle || null,
+      role,
+      home_metro_id: metroId,
+      zip: cleanZip || null,
+    });
     setSaving(false);
     if (error) {
       setMessage(
@@ -478,7 +457,7 @@ export default function ProfileScreen() {
         <ScrollView contentContainerStyle={styles.scroll}>
           <ThemedText type="subtitle">Profile</ThemedText>
 
-          {!isSupabaseConfigured ? (
+          {!isBackendConfigured ? (
             <ThemedView type="backgroundElement" style={styles.card}>
               <ThemedText type="smallBold">Backend not connected</ThemedText>
               <ThemedText type="small" themeColor="textSecondary">

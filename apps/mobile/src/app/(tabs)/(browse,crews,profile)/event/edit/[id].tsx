@@ -7,7 +7,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useSession } from '@/lib/auth-context';
-import { supabase } from '@/lib/supabase';
+import { getEvent } from '@/data/events';
 import type { DanceEvent } from '@/lib/types';
 
 export default function EditEventScreen() {
@@ -22,20 +22,15 @@ export default function EditEventScreen() {
       return;
     }
     let cancelled = false;
-    supabase
-      .from('events')
-      .select('*')
-      .eq('id', id)
-      .single()
-      .then(({ data, error }) => {
-        if (!cancelled) {
-          if (error || !data) {
-            setNotFound(true);
-          } else {
-            setEvent(data);
-          }
+    getEvent(id).then(({ data, error }) => {
+      if (!cancelled) {
+        if (error) {
+          setNotFound(true);
+        } else {
+          setEvent(data);
         }
-      });
+      }
+    });
     return () => {
       cancelled = true;
     };
