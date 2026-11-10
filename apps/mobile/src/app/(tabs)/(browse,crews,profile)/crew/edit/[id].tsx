@@ -6,11 +6,13 @@ import { CrewForm } from '@/components/crew-form';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
+import { useTabBarPadding } from '@/hooks/use-tab-bar-padding';
 import { useSession } from '@/lib/auth-context';
 import { getCrew } from '@/data/crews';
 import type { Crew } from '@/lib/types';
 
 export default function EditCrewScreen() {
+  const tabBarPadding = useTabBarPadding();
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { session, loading } = useSession();
@@ -40,7 +42,7 @@ export default function EditCrewScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <ScrollView contentContainerStyle={[styles.scroll, { paddingBottom: tabBarPadding }]}>
         <ThemedView style={styles.content}>
           {loading || (!crew && !notFound) ? (
             <ActivityIndicator style={styles.loader} />

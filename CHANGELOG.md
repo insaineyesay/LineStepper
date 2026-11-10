@@ -14,6 +14,9 @@ Add a line under "Unreleased" in the same pull request as the change.
 ## [Unreleased]
 
 ### Added
+- Event and crew forms autosave on the device as you type. Leaving a form
+  (say, by tapping a tab) and coming back picks up where you left off, with
+  a "Start over" option. The saved copy is deleted once the form is saved.
 - Events calendar with search and date filters, and an event page with
   venue, price, ticket link and host.
 - Radius search: events within 5, 10, 25, 50 or 100 miles of a ZIP code or
@@ -54,5 +57,7 @@ Add a line under "Unreleased" in the same pull request as the change.
 - The app opens on the Events tab.
 
 ### Fixed
+- The tab bar no longer covers the bottom of inner screens on phones, so
+  the Post event, Save and other bottom buttons can be tapped.
 - Blank page on the production web build.
 - Filter chips cut off on the web.

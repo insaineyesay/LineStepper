@@ -12,6 +12,7 @@ import { Button } from '@/components/button';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
+import { useTabBarPadding } from '@/hooks/use-tab-bar-padding';
 import { useSession } from '@/lib/auth-context';
 import { isBackendConfigured } from '@/data/backend';
 import {
@@ -29,6 +30,7 @@ function memberName(m: CrewMember) {
 }
 
 export default function CrewDetailScreen() {
+  const tabBarPadding = useTabBarPadding();
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { session } = useSession();
@@ -129,7 +131,7 @@ export default function CrewDetailScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <ScrollView contentContainerStyle={[styles.scroll, { paddingBottom: tabBarPadding }]}>
         <ThemedView style={styles.content}>
           {crew.tier === 'featured' && (
             <ThemedText type="smallBold">★ Featured crew</ThemedText>

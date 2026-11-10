@@ -6,11 +6,13 @@ import { EventForm } from '@/components/event-form';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
+import { useTabBarPadding } from '@/hooks/use-tab-bar-padding';
 import { useSession } from '@/lib/auth-context';
 import { getEvent } from '@/data/events';
 import type { DanceEvent } from '@/lib/types';
 
 export default function EditEventScreen() {
+  const tabBarPadding = useTabBarPadding();
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { session, loading } = useSession();
@@ -40,7 +42,7 @@ export default function EditEventScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <ScrollView contentContainerStyle={[styles.scroll, { paddingBottom: tabBarPadding }]}>
         <ThemedView style={styles.content}>
           {loading || (!event && !notFound) ? (
             <ActivityIndicator style={styles.loader} />
