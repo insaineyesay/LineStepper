@@ -23,19 +23,12 @@ Found while posting an event on iPhone (2026-11-09). The form is
    (Google Places Autocomplete or similar). This adds a paid API key and a
    per-lookup cost. Check pricing before building, and fill ZIP from the chosen
    address so organizers don't type it twice.
-7. **Tab bar covers the Post event button.** The bottom of the form sits under
-   the tab bar, so the button is very hard to press. Add bottom padding equal
-   to the tab bar height plus the safe area. Check the crew form for the same
-   problem.
+7. ~~**Tab bar covers the Post event button.**~~ Fixed in #19.
 8. **ZIP field flickers.** It jumps around when you tab out of it. Input
    validation otherwise works (date, time, ZIP). A likely cause is the field
    stripping non-digits on every keystroke (`onChangeText`), which makes iOS
    redraw the field. Reproduce it, then fix it.
-9. **Autosave drafts.** Leaving the form (for example by tapping the Events
-   tab) currently throws away everything typed. Autosave the form as you type
-   and offer to restore it when you come back. Start with one unsaved draft per
-   form, kept on the device. More than one is only worth it if organizers ask.
-   Saving it as a real draft event in the database is the other option, but
-   that creates rows for forms people abandon.
+9. ~~**Autosave drafts.**~~ Fixed in #19: one autosaved copy per form, on the
+   device.
 10. **No scroll bar.** Hide the vertical scroll indicator on form screens, and
     probably on every screen, so it feels like a native app.
