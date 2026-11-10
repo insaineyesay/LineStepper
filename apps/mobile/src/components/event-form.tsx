@@ -4,12 +4,14 @@ import { ActivityIndicator, StyleSheet, TextInput } from 'react-native';
 
 import { Button } from './button';
 import { Chip } from './chip';
+import { DraftNotice } from './draft-notice';
 import { ThemedText } from './themed-text';
 import { ThemedView } from './themed-view';
 
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { fetchPostCredits, publishEvent, usePaidPosting } from '@/lib/credits';
+import { useFormDraft } from '@/lib/form-draft';
 import { isZip, lookupZip } from '@/lib/location';
 import { createEvent, updateEvent, type EventInput } from '@/data/events';
 import { listMetros } from '@/data/reference';
@@ -57,6 +59,26 @@ export function EventForm({ userId, existing, onSaved }: EventFormProps) {
   const [savedStatus, setSavedStatus] = useState<EventStatus | null>(existing?.status ?? null);
   const [credits, setCredits] = useState<number | null>(null);
   const [needsCredits, setNeedsCredits] = useState(false);
+
+  // Autosave what's typed so leaving the form doesn't lose it.
+  const fields = {
+    title, description, date, time, venueName, address, city, zip, metroId, priceText, ticketUrl, status,
+  };
+  const [initialFields] = useState(() => fields);
+  const draft = useFormDraft(`event.${existing?.id ?? 'new'}.${userId}`, fields, initialFields, (v) => {
+    setTitle(v.title);
+    setDescription(v.description);
+    setDate(v.date);
+    setTime(v.time);
+    setVenueName(v.venueName);
+    setAddress(v.address);
+    setCity(v.city);
+    setZip(v.zip);
+    setMetroId(v.metroId);
+    setPriceText(v.priceText);
+    setTicketUrl(v.ticketUrl);
+    setStatus(v.status);
+  });
 
   useEffect(() => {
     if (!paidPosting) return;
@@ -151,6 +173,8 @@ export function EventForm({ userId, existing, onSaved }: EventFormProps) {
       id = data.id;
       setSavedId(data.id);
     }
+    // The details are in the database now; the device copy isn't needed.
+    draft.clear();
     setSavedStatus(payload.status);
 
     if (willSpendPost && id) {
@@ -180,6 +204,7 @@ export function EventForm({ userId, existing, onSaved }: EventFormProps) {
 
   return (
     <ThemedView type="backgroundElement" style={styles.card}>
+      {draft.restored && <DraftNotice onDiscard={draft.discard} />}
       <ThemedText type="small">Event title</ThemedText>
       <TextInput
         value={title}

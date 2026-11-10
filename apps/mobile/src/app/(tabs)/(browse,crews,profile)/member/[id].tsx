@@ -11,6 +11,7 @@ import { Button } from '@/components/button';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
+import { useTabBarPadding } from '@/hooks/use-tab-bar-padding';
 import { useSession } from '@/lib/auth-context';
 import { isBackendConfigured } from '@/data/backend';
 import { listCrewsForMember, type CrewLink } from '@/data/crews';
@@ -29,6 +30,7 @@ const ROLE_LABELS: Record<ProfileRole, string> = {
 };
 
 export default function MemberScreen() {
+  const tabBarPadding = useTabBarPadding();
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { session } = useSession();
@@ -120,7 +122,7 @@ export default function MemberScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <ScrollView contentContainerStyle={[styles.scroll, { paddingBottom: tabBarPadding }]}>
         <ThemedView style={styles.content}>
           {profile.tier === 'featured' && (
             <ThemedText type="smallBold">★ Featured</ThemedText>

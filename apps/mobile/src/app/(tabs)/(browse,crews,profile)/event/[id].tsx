@@ -11,6 +11,7 @@ import {
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
+import { useTabBarPadding } from '@/hooks/use-tab-bar-padding';
 import { useSession } from '@/lib/auth-context';
 import { useFlag } from '@/lib/flags';
 import { getPushStatusAsync, registerForPushAsync, type PushStatus } from '@/lib/push';
@@ -44,6 +45,7 @@ function reminderNote(remindersOn: boolean, pushStatus: PushStatus): string {
 }
 
 export default function EventDetailScreen() {
+  const tabBarPadding = useTabBarPadding();
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { session } = useSession();
@@ -134,7 +136,7 @@ export default function EventDetailScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <ScrollView contentContainerStyle={[styles.scroll, { paddingBottom: tabBarPadding }]}>
         <ThemedView style={styles.content}>
           {event.is_featured && (
             <ThemedText type="smallBold">★ Featured event</ThemedText>
