@@ -143,7 +143,7 @@ the feature flags.
 5. Point the app at it: set `EXPO_PUBLIC_API_URL` in
    `apps/mobile/.env.production` (done: `https://lineup2step-f5b25ea5f47b.herokuapp.com`).
    Phone and web builds both read it from there. `CORS_ORIGINS` must match
-   the web app's address exactly (`https://…`, no trailing slash; separate
+   the web app's address (`https://…`; a trailing slash is ignored; separate
    several with commas), or browsers can't send logs. Phones don't need it.
 
 **Reading the logs:** Heroku dashboard → **More → View logs**, or
