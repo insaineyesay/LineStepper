@@ -87,9 +87,9 @@ table (changed by admins at runtime). The API enforces flags: a route behind
 ## Deploying
 
 - **API (Heroku):** the root `Procfile` and the `heroku-postbuild` scripts
-  build and start `apps/api`; the `NPM_CONFIG_WORKSPACE=@linestepper/api`
-  config var keeps the install to the API alone. Step-by-step setup and
-  config vars: GETTING_STARTED.md, "API on Heroku".
+  build and start `apps/api`. Don't set `NPM_CONFIG_WORKSPACE` on Heroku: it
+  breaks the build. Step-by-step setup and config vars: GETTING_STARTED.md,
+  "API on Heroku".
 - **Mobile web (Vercel):** set the project's Root Directory to `apps/mobile`.
   `vercel.json` moved there with the app.
 

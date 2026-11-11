@@ -124,7 +124,6 @@ the feature flags.
 
    | Key | Value |
    |---|---|
-   | `NPM_CONFIG_WORKSPACE` | `@linestepper/api` (installs only the API, not the whole app) |
    | `NODE_ENV` | `production` |
    | `CORS_ORIGINS` | your web app's address, e.g. `https://<your-vercel-domain>` |
    | `AUTH_PROVIDER` | `supabase` |
@@ -132,6 +131,11 @@ the feature flags.
    | `SUPABASE_SERVICE_ROLE_KEY` | Supabase → Project Settings → **API Keys** → **Secret keys** (`sb_secret_…`; create one named `heroku-api`). Not the publishable key. Paste it straight into Heroku. |
    | `LOG_LEVEL` | `info` |
    | `POSTHOG_API_KEY` | the PostHog project key (`phc_…`) |
+
+   Don't add `NPM_CONFIG_WORKSPACE`. Heroku's build installs npm globally
+   first, and npm refuses a global install while that variable is set
+   ("Workspaces not supported for global packages"), so the build fails.
+   The root `package.json` already builds and starts only the API.
 
    Click **Add** on each row. A key typed into the empty bottom row isn't
    saved. To confirm, the **Activity** tab shows "Set … config vars" and the
