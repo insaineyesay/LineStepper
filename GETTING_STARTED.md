@@ -314,6 +314,15 @@ You don't need all three running:
 update profiles set is_admin = true where id = '<your user id>';
 ```
 
+**Legal pages.** The Terms of Service and Privacy Policy are at `/legal/terms`
+and `/legal/privacy` on the web app (for example
+`https://line-stepper-five.vercel.app/legal/privacy`). That privacy address is
+the one to give the App Store and Google Play. The wording comes from the
+Google Doc "LineUp2Step — Terms, Privacy and Disclaimers"; the app's copy is in
+`apps/mobile/src/content/legal.ts`. The company name, contact email, minimum
+age and other details are in `LEGAL_DETAILS` at the top of that file. Fill
+them in and set `draft: false` to remove the "being finalized" note.
+
 **Moderation.** Anyone signed in can report an event, crew or person, and
 block a person (on their profile). Admins see a **Moderation** button on
 their Profile, listing open reports oldest first. For each one:
