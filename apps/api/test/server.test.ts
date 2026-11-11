@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import type { AuthVerifier } from '@linestepper/shared';
 
+import { AccountsUnavailableError, type AccountStore } from '../src/accounts';
 import { loadConfig } from '../src/config';
 import { FlagService } from '../src/flags/service';
 import { MemoryFlagStore } from '../src/flags/store';
@@ -9,10 +10,24 @@ import { createServerLogging } from '../src/logging';
 import { buildServer } from '../src/server';
 import { memoryConnector } from './helpers';
 
+// Records who was deleted; deleting 'u-fail' throws.
+function fakeAccounts() {
+  const deleted: string[] = [];
+  const store: AccountStore & { deleted: string[] } = {
+    deleted,
+    async deleteAccount(id) {
+      if (id === 'u-fail') throw new Error('db down');
+      deleted.push(id);
+      return { crewsHandedOff: 1, crewsDeleted: 0 };
+    },
+  };
+  return store;
+}
+
 // Tokens are just user ids in tests; 'admin' is the only admin.
 const fakeAuth: AuthVerifier = { id: 'fake', verify: async (t) => (t.startsWith('u-') || t === 'admin' ? { id: t } : null) };
 
-async function setup() {
+async function setup(accounts: AccountStore = fakeAccounts()) {
   const config = loadConfig({ AUTH_PROVIDER: 'none', NODE_ENV: 'test', LOG_LEVEL: 'debug' } as NodeJS.ProcessEnv);
   const flags = new FlagService(new MemoryFlagStore(), undefined);
   const sink = memoryConnector('stdout', { alwaysOn: true });
@@ -25,6 +40,7 @@ async function setup() {
     flags,
     auth: fakeAuth,
     admins: { isAdmin: async (id) => id === 'admin' },
+    accounts,
   });
   // A route behind a flag that is off by default, to prove server-side enforcement.
   app.get('/bookings', { preHandler: app.requireFlag('booking') }, async () => ({ ok: true }));
@@ -116,5 +132,46 @@ describe('API', () => {
   it('POST /logs rejects a malformed body', async () => {
     const res = await ctx.app.inject({ method: 'POST', url: '/logs', payload: { nope: 1 } });
     expect(res.statusCode).toBe(400);
+  });
+
+  it('DELETE /me deletes only the signed-in account and logs it', async () => {
+    await ctx.app.close();
+    const accounts = fakeAccounts();
+    ctx = await setup(accounts);
+    expect((await ctx.app.inject({ method: 'DELETE', url: '/me' })).statusCode).toBe(401);
+    const res = await ctx.app.inject({ method: 'DELETE', url: '/me', headers: { authorization: 'Bearer u-7' } });
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toMatchObject({ deleted: true, crewsHandedOff: 1, crewsDeleted: 0 });
+    expect(accounts.deleted).toEqual(['u-7']);
+    expect((await ctx.events()).find((e) => e.event === 'account.deleted')).toMatchObject({ userId: 'u-7' });
+  });
+
+  it('DELETE /me reports failure without claiming success', async () => {
+    const res = await ctx.app.inject({ method: 'DELETE', url: '/me', headers: { authorization: 'Bearer u-fail' } });
+    expect(res.statusCode).toBe(500);
+    expect((await ctx.events()).some((e) => e.event === 'account.delete_failed')).toBe(true);
+  });
+
+  it('DELETE /me is 503 when the API has no service-role key', async () => {
+    await ctx.app.close();
+    ctx = await setup({ deleteAccount: async () => { throw new AccountsUnavailableError(); } });
+    const res = await ctx.app.inject({ method: 'DELETE', url: '/me', headers: { authorization: 'Bearer u-1' } });
+    expect(res.statusCode).toBe(503);
+  });
+
+  it('browsers may send DELETE from allowed origins', async () => {
+    await ctx.app.close();
+    const config = loadConfig({ AUTH_PROVIDER: 'none', NODE_ENV: 'test', CORS_ORIGINS: 'https://web.example' } as NodeJS.ProcessEnv);
+    const flags = new FlagService(new MemoryFlagStore(), undefined);
+    const { bus, logger } = createServerLogging(config, (k) => flags.isOn(k), [memoryConnector('stdout', { alwaysOn: true })]);
+    const app = await buildServer({ config, logger, bus, flags, auth: fakeAuth, admins: { isAdmin: async () => false }, accounts: fakeAccounts() });
+    const res = await app.inject({
+      method: 'OPTIONS',
+      url: '/me',
+      headers: { origin: 'https://web.example', 'access-control-request-method': 'DELETE', 'access-control-request-headers': 'authorization' },
+    });
+    expect(res.headers['access-control-allow-methods']).toContain('DELETE');
+    await app.close();
+    ctx = await setup();
   });
 });

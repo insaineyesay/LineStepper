@@ -13,6 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/button';
 import { Chip } from '@/components/chip';
+import { DeleteAccount } from '@/components/delete-account';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, MaxContentWidth, Spacing, TabRootTopInset } from '@/constants/theme';
@@ -255,7 +256,15 @@ function MyEventsCard({ userId }: { userId: string }) {
   );
 }
 
-function ProfileEditor({ userId, email }: { userId: string; email: string | undefined }) {
+function ProfileEditor({
+  userId,
+  email,
+  onDeleted,
+}: {
+  userId: string;
+  email: string | undefined;
+  onDeleted: () => void;
+}) {
   const theme = useTheme();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [metros, setMetros] = useState<Metro[]>([]);
@@ -424,6 +433,8 @@ function ProfileEditor({ userId, email }: { userId: string; email: string | unde
           Sign out
         </ThemedText>
       </Pressable>
+
+      <DeleteAccount onDeleted={onDeleted} />
     </>
   );
 }
@@ -450,6 +461,8 @@ function PrivacyCard() {
 
 export default function ProfileScreen() {
   const { session, loading } = useSession();
+  // Shown once after deleting, in place of the sign-in card.
+  const [accountDeleted, setAccountDeleted] = useState(false);
 
   return (
     <ThemedView style={styles.container}>
@@ -468,7 +481,19 @@ export default function ProfileScreen() {
           ) : loading ? (
             <ActivityIndicator style={styles.loader} />
           ) : session ? (
-            <ProfileEditor userId={session.user.id} email={session.user.email} />
+            <ProfileEditor
+              userId={session.user.id}
+              email={session.user.email}
+              onDeleted={() => setAccountDeleted(true)}
+            />
+          ) : accountDeleted ? (
+            <ThemedView type="backgroundElement" style={styles.card}>
+              <ThemedText type="smallBold">Your account was deleted</ThemedText>
+              <ThemedText type="small" themeColor="textSecondary">
+                Thanks for dancing with us. You can sign up again any time.
+              </ThemedText>
+              <Button label="Sign in or sign up" onPress={() => setAccountDeleted(false)} />
+            </ThemedView>
           ) : (
             <SignInCard />
           )}

@@ -14,6 +14,11 @@ Add a line under "Unreleased" in the same pull request as the change.
 ## [Unreleased]
 
 ### Added
+- Delete account, at the bottom of Profile. It removes the profile, the
+  events the person posted, their bookmarks, follows, crew memberships,
+  reminders and unused posts. Crews they started pass to the next member (an
+  admin first, then whoever joined earliest), or are deleted if no one else
+  is in them. Served by the API (`DELETE /me`).
 - Event and crew forms autosave on the device as you type. Leaving a form
   (say, by tapping a tab) and coming back picks up where you left off, with
   a "Start over" option. The saved copy is deleted once the form is saved.
