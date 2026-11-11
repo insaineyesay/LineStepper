@@ -48,6 +48,8 @@ Add a line under "Unreleased" in the same pull request as the change.
 - The app version is shown at the bottom of the Profile tab.
 
 ### Changed
+- The apps now send warnings, errors and key events to the API on Heroku,
+  and read feature flags from it.
 - Internal: screens and components get data only through one data layer
   (`apps/mobile/src/data`, one module per area), so each area can move from
   direct database access to the API without screen changes. A test blocks
