@@ -35,6 +35,12 @@ export const TELEMETRY_CATALOG = {
   'account.deleted': { kind: 'analytics', description: 'Someone deleted their account' },
   'account.delete_failed': { kind: 'error', description: 'Deleting an account failed' },
 
+  // Safety
+  'report.created': { kind: 'analytics', description: 'Someone reported an event, crew or profile (alert on this)' },
+  'user.blocked': { kind: 'analytics', description: 'Someone blocked another person' },
+  'user.unblocked': { kind: 'analytics', description: 'Someone unblocked another person' },
+  'moderation.action': { kind: 'log', description: 'An admin dismissed a report, removed content or banned someone' },
+
   // Events and posting
   'event.published': { kind: 'analytics', description: 'An event was published (one post spent)' },
   'credits.load_failed': { kind: 'log', description: 'The post balance could not be loaded' },

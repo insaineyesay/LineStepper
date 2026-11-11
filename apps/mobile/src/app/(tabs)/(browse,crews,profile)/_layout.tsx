@@ -39,6 +39,7 @@ export default function TabStackLayout({ segment }: { segment: string }) {
       <Stack.Screen name="crew/edit/[id]" options={{ title: 'Edit crew' }} />
       <Stack.Screen name="member/[id]" options={{ title: 'Profile' }} />
       <Stack.Screen name="credits" options={{ title: 'Buy posts' }} />
+      <Stack.Screen name="moderation" options={{ title: 'Moderation' }} />
     </Stack>
   );
 }

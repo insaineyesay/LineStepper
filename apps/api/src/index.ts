@@ -4,6 +4,7 @@ import { LogEvents } from '@linestepper/shared';
 
 import { noAccountStore, supabaseAccountStore } from './accounts';
 import { noAdmins, supabaseAdminDirectory } from './admins';
+import { noModerationStore, supabaseModerationStore } from './moderation';
 import { createAuthVerifier } from './auth';
 import { loadConfig } from './config';
 import { FlagService } from './flags/service';
@@ -43,6 +44,7 @@ async function main() {
     auth: createAuthVerifier(config),
     admins: db ? supabaseAdminDirectory(db) : noAdmins,
     accounts: db ? supabaseAccountStore(db) : noAccountStore,
+    moderation: db ? supabaseModerationStore(db) : noModerationStore,
   });
 
   await app.listen({ port: config.port, host: '0.0.0.0' });

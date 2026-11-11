@@ -13,6 +13,7 @@ import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTabBarPadding } from '@/hooks/use-tab-bar-padding';
 import { useSession } from '@/lib/auth-context';
+import { ReportButton } from '@/components/report-button';
 import { useFlag } from '@/lib/flags';
 import { getPushStatusAsync, registerForPushAsync, type PushStatus } from '@/lib/push';
 import { isBackendConfigured } from '@/data/backend';
@@ -228,6 +229,14 @@ export default function EventDetailScreen() {
               {reminderNote(remindersOn, pushStatus)}
             </ThemedText>
           )}
+          {session?.user.id === event.organizer_id && event.removed_at && (
+            <ThemedView type="backgroundElement" style={styles.button}>
+              <ThemedText type="smallBold">Removed by moderators</ThemedText>
+              <ThemedText type="small" themeColor="textSecondary">
+                Only you can see this event. Contact support if you think this was a mistake.
+              </ThemedText>
+            </ThemedView>
+          )}
           {session?.user.id === event.organizer_id && (
             <Pressable
               onPress={() =>
@@ -237,6 +246,9 @@ export default function EventDetailScreen() {
                 <ThemedText type="smallBold">Edit event</ThemedText>
               </ThemedView>
             </Pressable>
+          )}
+          {session && session.user.id !== event.organizer_id && (
+            <ReportButton targetType="event" targetId={event.id} />
           )}
         </ThemedView>
       </ScrollView>
