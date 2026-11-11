@@ -38,6 +38,7 @@ Skip this if someone has already done it for the project you're using.
    4. `0004_event_reminders.sql`
    5. `0005_post_credits.sql`
    6. `0006_zip_radius_search.sql`, then load the ZIP codes (below)
+   7. `0007_account_deletion.sql` (lets the API hand off crews when someone deletes their account)
 3. Optional: run `supabase/seed_sample_data.sql` to add sample events and
    crews.
 4. Make sign-in emails contain a code. The app signs you in with a 6-digit

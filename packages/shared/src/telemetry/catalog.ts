@@ -32,6 +32,8 @@ export const TELEMETRY_CATALOG = {
   'auth.sign_in': { kind: 'analytics', description: 'Someone signed in' },
   'auth.sign_out': { kind: 'analytics', description: 'Someone signed out' },
   'auth.error': { kind: 'log', description: 'Sign-in failed' },
+  'account.deleted': { kind: 'analytics', description: 'Someone deleted their account' },
+  'account.delete_failed': { kind: 'error', description: 'Deleting an account failed' },
 
   // Events and posting
   'event.published': { kind: 'analytics', description: 'An event was published (one post spent)' },
