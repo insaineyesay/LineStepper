@@ -3,8 +3,18 @@
   "configurations": [
     {
       "name": "linestepper-web",
-      "runtimeExecutable": "npx",
-      "runtimeArgs": ["expo", "start", "--web", "--port", "8090"],
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "exec",
+        "-w",
+        "@linestepper/mobile",
+        "--",
+        "expo",
+        "start",
+        "--web",
+        "--port",
+        "8090"
+      ],
       "port": 8090,
       "autoPort": false
     }

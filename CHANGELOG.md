@@ -14,6 +14,11 @@ Add a line under "Unreleased" in the same pull request as the change.
 ## [Unreleased]
 
 ### Added
+- Terms of Service and Privacy Policy pages (`/legal/terms`, `/legal/privacy`),
+  readable without signing in, linked from the sign-in card and the bottom of
+  Profile. Disclaimers at the foot of every event and crew page. Draft text
+  with placeholders until the client fills in the details
+  (`apps/mobile/src/content/legal.ts`).
 - Report and block. Anyone signed in can report an event, crew or person
   (spam, harassment, inappropriate, fake, something else), and block a person
   from their profile. Blocking hides both people from each other (profiles,
