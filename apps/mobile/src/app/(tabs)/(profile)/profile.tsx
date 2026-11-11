@@ -13,6 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/button';
 import { Chip } from '@/components/chip';
+import { BlockedPeople } from '@/components/blocked-people';
 import { DeleteAccount } from '@/components/delete-account';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -265,6 +266,7 @@ function ProfileEditor({
   email: string | undefined;
   onDeleted: () => void;
 }) {
+  const router = useRouter();
   const theme = useTheme();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [metros, setMetros] = useState<Metro[]>([]);
@@ -420,6 +422,12 @@ function ProfileEditor({
       <BookmarksCard userId={userId} />
 
       <MyEventsCard userId={userId} />
+
+      <BlockedPeople />
+
+      {profile?.is_admin && (
+        <Button label="Moderation" logName="open_moderation" onPress={() => router.push('/moderation')} />
+      )}
 
       <Pressable
         onPress={() =>

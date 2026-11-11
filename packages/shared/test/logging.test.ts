@@ -19,6 +19,13 @@ describe('scrub', () => {
       durationMs: 120,
     });
   });
+
+  it('keeps ids whose digits look like a phone or card number, and still scrubs text around them', () => {
+    const digitsOnly = '00000000-0000-4000-8000-00000000000a';
+    const phoneShaped = '75755501-0012-4345-8678-901234567890';
+    expect(scrub({ userId: digitsOnly, targetId: phoneShaped })).toEqual({ userId: digitsOnly, targetId: phoneShaped });
+    expect(scrub(`event ${phoneShaped} call 757-555-0100`)).toBe(`event ${phoneShaped} call [redacted]`);
+  });
 });
 
 describe('createLogger', () => {

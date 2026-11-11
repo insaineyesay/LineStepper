@@ -14,6 +14,15 @@ Add a line under "Unreleased" in the same pull request as the change.
 ## [Unreleased]
 
 ### Added
+- Report and block. Anyone signed in can report an event, crew or person
+  (spam, harassment, inappropriate, fake, something else), and block a person
+  from their profile. Blocking hides both people from each other (profiles,
+  events, crews, member lists) and removes follows between them; unblock from
+  Profile → Blocked people.
+- Moderation screen for admins: open reports, oldest first, with Dismiss,
+  Remove (event or crew) and Ban. A ban hides everything the person posted,
+  stops them signing in and keeps their email from signing up again. Every
+  action is logged with who did it.
 - Delete account, at the bottom of Profile. It removes the profile, the
   events the person posted, their bookmarks, follows, crew memberships,
   reminders and unused posts. Crews they started pass to the next member (an
@@ -64,6 +73,7 @@ Add a line under "Unreleased" in the same pull request as the change.
 - The app opens on the Events tab.
 
 ### Fixed
+- Logs no longer mangle ids whose digits look like a phone or card number.
 - The tab bar no longer covers the bottom of inner screens on phones, so
   the Post event, Save and other bottom buttons can be tapped.
 - Blank page on the production web build.

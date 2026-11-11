@@ -39,6 +39,7 @@ Skip this if someone has already done it for the project you're using.
    5. `0005_post_credits.sql`
    6. `0006_zip_radius_search.sql`, then load the ZIP codes (below)
    7. `0007_account_deletion.sql` (lets the API hand off crews when someone deletes their account)
+   8. `0008_moderation.sql` (report, block and ban; see "Moderation" below)
 3. Optional: run `supabase/seed_sample_data.sql` to add sample events and
    crews.
 4. Make sign-in emails contain a code. The app signs you in with a 6-digit
@@ -304,7 +305,7 @@ You don't need all three running:
 3. Fill in your profile (handle, home metro, role) and save.
 4. Browse **Events** and **Crews**, post an event, or start a crew.
 
-**Make yourself an admin.** You need this to change feature flags.
+**Make yourself an admin.** You need this to change feature flags and to see the Moderation screen.
 
 1. Find your user ID under **Authentication → Users** in Supabase.
 2. Run this in the SQL Editor:
@@ -312,6 +313,25 @@ You don't need all three running:
 ```sql
 update profiles set is_admin = true where id = '<your user id>';
 ```
+
+**Moderation.** Anyone signed in can report an event, crew or person, and
+block a person (on their profile). Admins see a **Moderation** button on
+their Profile, listing open reports oldest first. For each one:
+
+- **Dismiss**: nothing was wrong.
+- **Remove event / Remove crew**: hides it from everyone except its owner.
+- **Ban**: bans whoever posted it. Everything they posted is hidden, they
+  can't sign in, and their email can't sign up again.
+
+Each action closes every open report on the same thing and is recorded in the
+`moderation_actions` table with who did it. To undo one, use the SQL Editor:
+set `removed_at` (events, crews) or `banned_at` (profiles) back to `null`, and
+for a ban also unban the user under **Authentication → Users**.
+
+Apple expects reports to be acted on quickly (within a day). To get told about
+new ones, set up an alert in PostHog on the `report.created` event: **Activity
+→ the event → Create alert**, or an Insight with a threshold of 1 per hour and
+an email subscription.
 
 **Change a feature flag.** Do this from the API while signed in as an admin:
 
