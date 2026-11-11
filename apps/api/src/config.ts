@@ -30,7 +30,11 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     port: Number(env.PORT ?? 4000),
     env: blank(env.NODE_ENV) ?? 'development',
     appVersion: blank(env.APP_VERSION) ?? blank(env.HEROKU_RELEASE_VERSION) ?? 'dev',
-    corsOrigins: (blank(env.CORS_ORIGINS) ?? '').split(',').map((s) => s.trim()).filter(Boolean),
+    // Browsers send the origin without a trailing slash, so drop any typed one.
+    corsOrigins: (blank(env.CORS_ORIGINS) ?? '')
+      .split(',')
+      .map((s) => s.trim().replace(/\/+$/, ''))
+      .filter(Boolean),
     logLevel: (blank(env.LOG_LEVEL) as LogLevel) ?? 'info',
     auth: { provider: authProvider, supabaseUrl, supabaseJwtSecret: blank(env.SUPABASE_JWT_SECRET) },
     supabase: { url: supabaseUrl, serviceRoleKey: blank(env.SUPABASE_SERVICE_ROLE_KEY) },

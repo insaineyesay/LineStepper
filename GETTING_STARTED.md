@@ -128,21 +128,28 @@ the feature flags.
    | `CORS_ORIGINS` | your web app's address, e.g. `https://<your-vercel-domain>` |
    | `AUTH_PROVIDER` | `supabase` |
    | `SUPABASE_URL` | `https://<ref>.supabase.co` |
-   | `SUPABASE_SERVICE_ROLE_KEY` | Supabase → Project Settings → API → `service_role` key (keep it secret) |
+   | `SUPABASE_SERVICE_ROLE_KEY` | Supabase → Project Settings → **API Keys** → **Secret keys** (`sb_secret_…`; create one named `heroku-api`). Not the publishable key. Paste it straight into Heroku. |
    | `LOG_LEVEL` | `info` |
    | `POSTHOG_API_KEY` | the PostHog project key (`phc_…`) |
+
+   Click **Add** on each row. A key typed into the empty bottom row isn't
+   saved. To confirm, the **Activity** tab shows "Set … config vars" and the
+   app restarts on its own.
 
 3. Under **Deploy**, connect the GitHub repo and turn on automatic deploys
    from `main`, then click **Deploy Branch** once.
 4. Check it: open `https://<your-app>.herokuapp.com/health`. It should show
    `"ok":true`.
-5. Point the app at it: in Vercel (Settings → Environment Variables) and in
-   `apps/mobile/.env.production`, set
-   `EXPO_PUBLIC_API_URL=https://<your-app>.herokuapp.com`, then redeploy the
-   web app. Phone builds pick it up from `.env.production`.
+5. Point the app at it: set `EXPO_PUBLIC_API_URL` in
+   `apps/mobile/.env.production` (done: `https://lineup2step-f5b25ea5f47b.herokuapp.com`).
+   Phone and web builds both read it from there. `CORS_ORIGINS` must match
+   the web app's address (`https://…`; a trailing slash is ignored; separate
+   several with commas), or browsers can't send logs. Phones don't need it.
 
 **Reading the logs:** Heroku dashboard → **More → View logs**, or
-`heroku logs --tail -a <your-app>`. Heroku only keeps the most recent 1,500
+`heroku logs --tail -a <your-app>`. With two-factor login on, sign the CLI in
+with `heroku login -i` and paste your **API key** (Account settings → API Key)
+at the password prompt. Heroku only keeps the most recent 1,500
 lines, so for search, history and email alerts on errors, add a logging
 add-on from **Resources → Add-ons** (Papertrail is the one this API was built
 for; it's billed through Heroku). With the add-on, leave `PAPERTRAIL_TOKEN`
