@@ -4,14 +4,17 @@ import { ActivityIndicator, StyleSheet, TextInput } from 'react-native';
 
 import { Button } from './button';
 import { Chip } from './chip';
+import { DraftNotice } from './draft-notice';
 import { ThemedText } from './themed-text';
 import { ThemedView } from './themed-view';
 
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { fetchPostCredits, publishEvent, usePaidPosting } from '@/lib/credits';
+import { useFormDraft } from '@/lib/form-draft';
 import { isZip, lookupZip } from '@/lib/location';
-import { supabase } from '@/lib/supabase';
+import { createEvent, updateEvent, type EventInput } from '@/data/events';
+import { listMetros } from '@/data/reference';
 import type { DanceEvent, EventStatus, Metro } from '@/lib/types';
 
 interface EventFormProps {
@@ -57,6 +60,26 @@ export function EventForm({ userId, existing, onSaved }: EventFormProps) {
   const [credits, setCredits] = useState<number | null>(null);
   const [needsCredits, setNeedsCredits] = useState(false);
 
+  // Autosave what's typed so leaving the form doesn't lose it.
+  const fields = {
+    title, description, date, time, venueName, address, city, zip, metroId, priceText, ticketUrl, status,
+  };
+  const [initialFields] = useState(() => fields);
+  const draft = useFormDraft(`event.${existing?.id ?? 'new'}.${userId}`, fields, initialFields, (v) => {
+    setTitle(v.title);
+    setDescription(v.description);
+    setDate(v.date);
+    setTime(v.time);
+    setVenueName(v.venueName);
+    setAddress(v.address);
+    setCity(v.city);
+    setZip(v.zip);
+    setMetroId(v.metroId);
+    setPriceText(v.priceText);
+    setTicketUrl(v.ticketUrl);
+    setStatus(v.status);
+  });
+
   useEffect(() => {
     if (!paidPosting) return;
     let cancelled = false;
@@ -74,15 +97,11 @@ export function EventForm({ userId, existing, onSaved }: EventFormProps) {
 
   useEffect(() => {
     let cancelled = false;
-    supabase
-      .from('metros')
-      .select('*')
-      .order('id')
-      .then(({ data }) => {
-        if (!cancelled && data) {
-          setMetros(data);
-        }
-      });
+    listMetros().then(({ data }) => {
+      if (!cancelled && data) {
+        setMetros(data);
+      }
+    });
     return () => {
       cancelled = true;
     };
@@ -118,7 +137,7 @@ export function EventForm({ userId, existing, onSaved }: EventFormProps) {
       }
     }
 
-    const payload = {
+    const payload: EventInput = {
       title: title.trim(),
       description: description.trim() || null,
       starts_at: startsAt.toISOString(),
@@ -138,26 +157,24 @@ export function EventForm({ userId, existing, onSaved }: EventFormProps) {
     setNeedsCredits(false);
     let id = savedId;
     if (id) {
-      const { error } = await supabase.from('events').update(payload).eq('id', id);
+      const { error } = await updateEvent(id, payload);
       if (error) {
         setSaving(false);
         setMessage(error.message);
         return;
       }
     } else {
-      const { data, error } = await supabase
-        .from('events')
-        .insert({ ...payload, organizer_id: userId })
-        .select('id')
-        .single();
-      if (error || !data) {
+      const { data, error } = await createEvent(userId, payload);
+      if (error) {
         setSaving(false);
-        setMessage(error?.message ?? 'Something went wrong saving the event.');
+        setMessage(error.message);
         return;
       }
       id = data.id;
       setSavedId(data.id);
     }
+    // The details are in the database now; the device copy isn't needed.
+    draft.clear();
     setSavedStatus(payload.status);
 
     if (willSpendPost && id) {
@@ -187,6 +204,7 @@ export function EventForm({ userId, existing, onSaved }: EventFormProps) {
 
   return (
     <ThemedView type="backgroundElement" style={styles.card}>
+      {draft.restored && <DraftNotice onDiscard={draft.discard} />}
       <ThemedText type="small">Event title</ThemedText>
       <TextInput
         value={title}

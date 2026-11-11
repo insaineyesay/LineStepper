@@ -6,10 +6,12 @@ import Fastify, { type FastifyInstance, type preHandlerHookHandler } from 'fasti
 
 import { LogEvents, type AuthUser, type AuthVerifier, type FlagKey, type Logger } from '@linestepper/shared';
 
+import type { AccountStore } from './accounts';
 import type { AdminDirectory } from './auth';
 import type { Config } from './config';
 import type { FlagService } from './flags/service';
 import type { LogBus } from './logging';
+import { accountRoutes } from './routes/account';
 import { adminFlagRoutes } from './routes/admin-flags';
 import { flagRoutes } from './routes/flags';
 import { healthRoutes } from './routes/health';
@@ -36,6 +38,7 @@ export interface ServerDeps {
   flags: FlagService;
   auth: AuthVerifier;
   admins: AdminDirectory;
+  accounts: AccountStore;
 }
 
 const REQUEST_ID = /^[\w-]{8,64}$/;
@@ -59,6 +62,8 @@ export async function buildServer(deps: ServerDeps): Promise<FastifyInstance> {
 
   await app.register(cors, {
     origin: deps.config.corsOrigins.length ? deps.config.corsOrigins : false,
+    // Listed explicitly: newer @fastify/cors only allows GET/HEAD/POST by default.
+    methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE'],
     exposedHeaders: ['x-request-id'],
   });
   await app.register(rateLimit, { global: false });
@@ -111,6 +116,7 @@ export async function buildServer(deps: ServerDeps): Promise<FastifyInstance> {
   await app.register(flagRoutes);
   await app.register(adminFlagRoutes);
   await app.register(logRoutes);
+  await app.register(accountRoutes);
 
   return app;
 }

@@ -14,6 +14,14 @@ Add a line under "Unreleased" in the same pull request as the change.
 ## [Unreleased]
 
 ### Added
+- Delete account, at the bottom of Profile. It removes the profile, the
+  events the person posted, their bookmarks, follows, crew memberships,
+  reminders and unused posts. Crews they started pass to the next member (an
+  admin first, then whoever joined earliest), or are deleted if no one else
+  is in them. Served by the API (`DELETE /me`).
+- Event and crew forms autosave on the device as you type. Leaving a form
+  (say, by tapping a tab) and coming back picks up where you left off, with
+  a "Start over" option. The saved copy is deleted once the form is saved.
 - Events calendar with search and date filters, and an event page with
   venue, price, ticket link and host.
 - Radius search: events within 5, 10, 25, 50 or 100 miles of a ZIP code or
@@ -45,10 +53,18 @@ Add a line under "Unreleased" in the same pull request as the change.
 - The app version is shown at the bottom of the Profile tab.
 
 ### Changed
+- The apps now send warnings, errors and key events to the API on Heroku,
+  and read feature flags from it.
+- Internal: screens and components get data only through one data layer
+  (`apps/mobile/src/data`, one module per area), so each area can move from
+  direct database access to the API without screen changes. A test blocks
+  direct database calls anywhere else.
 - The tab bar stays on every screen, and tapping a tab returns to its first
   screen.
 - The app opens on the Events tab.
 
 ### Fixed
+- The tab bar no longer covers the bottom of inner screens on phones, so
+  the Post event, Save and other bottom buttons can be tapped.
 - Blank page on the production web build.
 - Filter chips cut off on the web.

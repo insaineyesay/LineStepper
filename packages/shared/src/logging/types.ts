@@ -46,6 +46,8 @@ export const LogEvents = {
   uiTap: 'ui.tap',
   apiRequest: 'api.request',
   authSignIn: 'auth.sign_in',
+  accountDeleted: 'account.deleted',
+  accountDeleteFailed: 'account.delete_failed',
   authSignOut: 'auth.sign_out',
   authError: 'auth.error',
   flagsLoaded: 'flags.loaded',

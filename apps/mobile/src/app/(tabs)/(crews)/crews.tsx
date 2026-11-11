@@ -8,7 +8,8 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, MaxContentWidth, Spacing, TabRootTopInset } from '@/constants/theme';
 import { useSession } from '@/lib/auth-context';
-import { isSupabaseConfigured, supabase } from '@/lib/supabase';
+import { isBackendConfigured } from '@/data/backend';
+import { listCrews } from '@/data/crews';
 import type { Crew } from '@/lib/types';
 
 const SAMPLE_CREWS: Crew[] = [
@@ -72,22 +73,16 @@ export default function CrewsScreen() {
   // Refetch every time the tab gains focus so new crews appear.
   useFocusEffect(
     useCallback(() => {
-      if (!isSupabaseConfigured) {
+      if (!isBackendConfigured) {
         return;
       }
       let cancelled = false;
-      supabase
-        .from('crews')
-        .select('*')
-        .order('tier', { ascending: false })
-        .order('name')
-        .limit(100)
-        .then(({ data, error }) => {
-          if (!cancelled && !error && data) {
-            setCrews(data);
-            setUsingSampleData(false);
-          }
-        });
+      listCrews().then(({ data, error }) => {
+        if (!cancelled && !error) {
+          setCrews(data);
+          setUsingSampleData(false);
+        }
+      });
       return () => {
         cancelled = true;
       };

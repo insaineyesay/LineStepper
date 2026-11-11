@@ -11,22 +11,14 @@ import {
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
+import { useTabBarPadding } from '@/hooks/use-tab-bar-padding';
 import { useSession } from '@/lib/auth-context';
 import { useFlag } from '@/lib/flags';
 import { getPushStatusAsync, registerForPushAsync, type PushStatus } from '@/lib/push';
-import { isSupabaseConfigured, supabase } from '@/lib/supabase';
-import type { DanceEvent } from '@/lib/types';
+import { isBackendConfigured } from '@/data/backend';
+import { addBookmark, isBookmarked, removeBookmark } from '@/data/bookmarks';
+import { getEventDetail, type EventDetail } from '@/data/events';
 
-interface EventDetail extends DanceEvent {
-  organizer: {
-    id: string;
-    display_name: string | null;
-    handle: string | null;
-    role: string;
-  } | null;
-  crew: { id: string; name: string; slug: string } | null;
-  metro: { name: string; state: string } | null;
-}
 
 function formatFullDate(iso: string) {
   return new Date(iso).toLocaleString(undefined, {
@@ -53,6 +45,7 @@ function reminderNote(remindersOn: boolean, pushStatus: PushStatus): string {
 }
 
 export default function EventDetailScreen() {
+  const tabBarPadding = useTabBarPadding();
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { session } = useSession();
@@ -70,30 +63,19 @@ export default function EventDetailScreen() {
   }, []);
 
   const load = useCallback(async () => {
-    if (!isSupabaseConfigured || !id) {
+    if (!isBackendConfigured || !id) {
       setNotFound(true);
       return;
     }
-    const { data, error } = await supabase
-      .from('events')
-      .select(
-        '*, organizer:profiles!events_organizer_id_fkey(id, display_name, handle, role), crew:crews(id, name, slug), metro:metros(name, state)'
-      )
-      .eq('id', id)
-      .single();
-    if (error || !data) {
+    const { data, error } = await getEventDetail(id);
+    if (error) {
       setNotFound(true);
       return;
     }
-    setEvent(data as EventDetail);
+    setEvent(data);
     if (session) {
-      const { data: bookmark } = await supabase
-        .from('event_bookmarks')
-        .select('event_id')
-        .eq('profile_id', session.user.id)
-        .eq('event_id', id)
-        .maybeSingle();
-      setBookmarked(Boolean(bookmark));
+      const { data: saved } = await isBookmarked(session.user.id, id);
+      setBookmarked(Boolean(saved));
     }
   }, [id, session]);
 
@@ -108,18 +90,12 @@ export default function EventDetailScreen() {
     }
     setBookmarkBusy(true);
     if (bookmarked) {
-      const { error } = await supabase
-        .from('event_bookmarks')
-        .delete()
-        .eq('profile_id', session.user.id)
-        .eq('event_id', event.id);
+      const { error } = await removeBookmark(session.user.id, event.id);
       if (!error) {
         setBookmarked(false);
       }
     } else {
-      const { error } = await supabase
-        .from('event_bookmarks')
-        .insert({ profile_id: session.user.id, event_id: event.id });
+      const { error } = await addBookmark(session.user.id, event.id);
       if (!error) {
         setBookmarked(true);
         // Bookmarking is when reminders make sense, so ask for notifications here.
@@ -160,7 +136,7 @@ export default function EventDetailScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <ScrollView contentContainerStyle={[styles.scroll, { paddingBottom: tabBarPadding }]}>
         <ThemedView style={styles.content}>
           {event.is_featured && (
             <ThemedText type="smallBold">★ Featured event</ThemedText>

@@ -6,11 +6,13 @@ import { EventForm } from '@/components/event-form';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
+import { useTabBarPadding } from '@/hooks/use-tab-bar-padding';
 import { useSession } from '@/lib/auth-context';
-import { supabase } from '@/lib/supabase';
+import { getEvent } from '@/data/events';
 import type { DanceEvent } from '@/lib/types';
 
 export default function EditEventScreen() {
+  const tabBarPadding = useTabBarPadding();
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { session, loading } = useSession();
@@ -22,20 +24,15 @@ export default function EditEventScreen() {
       return;
     }
     let cancelled = false;
-    supabase
-      .from('events')
-      .select('*')
-      .eq('id', id)
-      .single()
-      .then(({ data, error }) => {
-        if (!cancelled) {
-          if (error || !data) {
-            setNotFound(true);
-          } else {
-            setEvent(data);
-          }
+    getEvent(id).then(({ data, error }) => {
+      if (!cancelled) {
+        if (error) {
+          setNotFound(true);
+        } else {
+          setEvent(data);
         }
-      });
+      }
+    });
     return () => {
       cancelled = true;
     };
@@ -45,7 +42,7 @@ export default function EditEventScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <ScrollView contentContainerStyle={[styles.scroll, { paddingBottom: tabBarPadding }]}>
         <ThemedView style={styles.content}>
           {loading || (!event && !notFound) ? (
             <ActivityIndicator style={styles.loader} />

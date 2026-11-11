@@ -3,12 +3,15 @@ import { ActivityIndicator, StyleSheet, TextInput } from 'react-native';
 
 import { Button } from './button';
 import { Chip } from './chip';
+import { DraftNotice } from './draft-notice';
 import { ThemedText } from './themed-text';
 import { ThemedView } from './themed-view';
 
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { supabase } from '@/lib/supabase';
+import { createCrew, updateCrew, type CrewInput } from '@/data/crews';
+import { listMetros } from '@/data/reference';
+import { useFormDraft } from '@/lib/form-draft';
 import type { Crew, Metro } from '@/lib/types';
 
 interface CrewFormProps {
@@ -37,17 +40,24 @@ export function CrewForm({ userId, existing, onSaved }: CrewFormProps) {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
+  // Autosave what's typed so leaving the form doesn't lose it.
+  const fields = { name, description, metroId, merchUrl, isJoinable };
+  const [initialFields] = useState(() => fields);
+  const draft = useFormDraft(`crew.${existing?.id ?? 'new'}.${userId}`, fields, initialFields, (v) => {
+    setName(v.name);
+    setDescription(v.description);
+    setMetroId(v.metroId);
+    setMerchUrl(v.merchUrl);
+    setIsJoinable(v.isJoinable);
+  });
+
   useEffect(() => {
     let cancelled = false;
-    supabase
-      .from('metros')
-      .select('*')
-      .order('id')
-      .then(({ data }) => {
-        if (!cancelled && data) {
-          setMetros(data);
-        }
-      });
+    listMetros().then(({ data }) => {
+      if (!cancelled && data) {
+        setMetros(data);
+      }
+    });
     return () => {
       cancelled = true;
     };
@@ -61,7 +71,7 @@ export function CrewForm({ userId, existing, onSaved }: CrewFormProps) {
       return;
     }
 
-    const payload = {
+    const payload: CrewInput = {
       name: cleanName,
       description: description.trim() || null,
       home_metro_id: metroId,
@@ -71,14 +81,12 @@ export function CrewForm({ userId, existing, onSaved }: CrewFormProps) {
 
     setSaving(true);
     if (existing) {
-      const { error } = await supabase
-        .from('crews')
-        .update(payload)
-        .eq('id', existing.id);
+      const { error } = await updateCrew(existing.id, payload);
       setSaving(false);
       if (error) {
         setMessage(error.message);
       } else {
+        draft.clear();
         onSaved(existing.id);
       }
     } else {
@@ -87,19 +95,16 @@ export function CrewForm({ userId, existing, onSaved }: CrewFormProps) {
         setMessage('That name needs a few more letters or numbers.');
         return;
       }
-      const { data, error } = await supabase
-        .from('crews')
-        .insert({ ...payload, slug, owner_id: userId })
-        .select('id')
-        .single();
+      const { data, error } = await createCrew(userId, slug, payload);
       setSaving(false);
-      if (error || !data) {
+      if (error) {
         setMessage(
-          error?.code === '23505'
+          error.code === '23505'
             ? 'A crew with a very similar name already exists — try another.'
-            : (error?.message ?? 'Something went wrong creating the crew.')
+            : error.message
         );
       } else {
+        draft.clear();
         onSaved(data.id);
       }
     }
@@ -112,6 +117,7 @@ export function CrewForm({ userId, existing, onSaved }: CrewFormProps) {
 
   return (
     <ThemedView type="backgroundElement" style={styles.card}>
+      {draft.restored && <DraftNotice onDiscard={draft.discard} />}
       <ThemedText type="small">Crew name</ThemedText>
       <TextInput
         value={name}

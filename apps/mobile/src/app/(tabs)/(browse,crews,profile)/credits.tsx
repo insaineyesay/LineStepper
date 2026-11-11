@@ -6,6 +6,7 @@ import { Button } from '@/components/button';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
+import { useTabBarPadding } from '@/hooks/use-tab-bar-padding';
 import { useSession } from '@/lib/auth-context';
 import { fetchPostCredits, startCheckout } from '@/lib/credits';
 import { formatPrice, POST_PACK_OPTIONS, type PostPackOption } from '@/lib/post-packs';
@@ -16,6 +17,7 @@ import { formatPrice, POST_PACK_OPTIONS, type PostPackOption } from '@/lib/post-
  * needs the store accounts first; until then the apps only show the balance.
  */
 export default function CreditsScreen() {
+  const tabBarPadding = useTabBarPadding();
   const { session } = useSession();
   const { checkout } = useLocalSearchParams<{ checkout?: string }>();
   const [balance, setBalance] = useState<number | null>(null);
@@ -52,7 +54,7 @@ export default function CreditsScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <ScrollView contentContainerStyle={[styles.scroll, { paddingBottom: tabBarPadding }]}>
         <ThemedView style={styles.content}>
           {!session ? (
             <ThemedView type="backgroundElement" style={styles.card}>
