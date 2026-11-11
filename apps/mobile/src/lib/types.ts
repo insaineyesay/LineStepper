@@ -32,6 +32,10 @@ export interface Profile {
   avatar_url: string | null;
   home_metro_id: number | null;
   zip: string | null;
+  /** Can see the Moderation screen (migration 0003). */
+  is_admin?: boolean;
+  /** Set when a moderator bans the account (migration 0008). */
+  banned_at?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -72,6 +76,8 @@ export interface DanceEvent {
   /** Set by the database from the ZIP (or the area); read-only. */
   lat: number | null;
   lng: number | null;
+  /** Set when a moderator removes the event; only its organizer still sees it (migration 0008). */
+  removed_at?: string | null;
   created_at: string;
   updated_at: string;
 }

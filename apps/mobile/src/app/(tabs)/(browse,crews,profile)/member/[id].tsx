@@ -13,6 +13,8 @@ import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTabBarPadding } from '@/hooks/use-tab-bar-padding';
 import { useSession } from '@/lib/auth-context';
+import { BlockButton } from '@/components/block-button';
+import { ReportButton } from '@/components/report-button';
 import { isBackendConfigured } from '@/data/backend';
 import { listCrewsForMember, type CrewLink } from '@/data/crews';
 import { listUpcomingEventsByOrganizer, type UpcomingEventSummary } from '@/data/events';
@@ -206,6 +208,12 @@ export default function MemberScreen() {
                 </Pressable>
               ))}
             </ThemedView>
+          )}
+          {session && !isSelf && (
+            <>
+              <ReportButton targetType="profile" targetId={profile.id} />
+              <BlockButton profileId={profile.id} name={name} onBlocked={() => router.back()} />
+            </>
           )}
         </ThemedView>
       </ScrollView>

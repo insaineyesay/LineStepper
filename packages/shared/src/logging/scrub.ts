@@ -18,12 +18,23 @@ export const REDACTED = '[redacted]';
 const MAX_DEPTH = 6;
 const MAX_STRING = 2000;
 
+// Ids (user, event, request). Their digit runs can look like a phone or card
+// number, so they're set aside before the patterns run: an id isn't personal
+// data, and a mangled user id makes logs useless for support.
+const UUID = /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/gi;
+
+function scrubText(value: string): string {
+  return value.replace(JWT, REDACTED).replace(EMAIL, REDACTED).replace(CARD, REDACTED).replace(PHONE, REDACTED);
+}
+
 export function scrubString(value: string): string {
-  const out = value
-    .replace(JWT, REDACTED)
-    .replace(EMAIL, REDACTED)
-    .replace(CARD, REDACTED)
-    .replace(PHONE, REDACTED);
+  let out = '';
+  let last = 0;
+  for (const match of value.matchAll(UUID)) {
+    out += scrubText(value.slice(last, match.index)) + match[0];
+    last = match.index + match[0].length;
+  }
+  out += scrubText(value.slice(last));
   return out.length > MAX_STRING ? `${out.slice(0, MAX_STRING)}…` : out;
 }
 
