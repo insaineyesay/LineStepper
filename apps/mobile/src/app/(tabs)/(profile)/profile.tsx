@@ -15,6 +15,7 @@ import { Button } from '@/components/button';
 import { Chip } from '@/components/chip';
 import { BlockedPeople } from '@/components/blocked-people';
 import { DeleteAccount } from '@/components/delete-account';
+import { LegalLinks, SignInConsent } from '@/components/legal-links';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, MaxContentWidth, Spacing, TabRootTopInset } from '@/constants/theme';
@@ -89,6 +90,7 @@ function SignInCard() {
         Enter your email and we&apos;ll send you a one-time code. No password
         needed.
       </ThemedText>
+      <SignInConsent />
       <TextInput
         value={email}
         onChangeText={setEmail}
@@ -509,6 +511,7 @@ export default function ProfileScreen() {
           <ThemedText type="small" themeColor="textSecondary" style={styles.version}>
             LineUp2Step {Constants.expoConfig?.version ?? ''}
           </ThemedText>
+          <LegalLinks />
         </ScrollView>
       </SafeAreaView>
     </ThemedView>

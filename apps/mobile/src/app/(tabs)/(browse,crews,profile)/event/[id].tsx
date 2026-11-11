@@ -13,6 +13,7 @@ import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTabBarPadding } from '@/hooks/use-tab-bar-padding';
 import { useSession } from '@/lib/auth-context';
+import { Disclaimer } from '@/components/legal-links';
 import { ReportButton } from '@/components/report-button';
 import { useFlag } from '@/lib/flags';
 import { getPushStatusAsync, registerForPushAsync, type PushStatus } from '@/lib/push';
@@ -250,6 +251,7 @@ export default function EventDetailScreen() {
           {session && session.user.id !== event.organizer_id && (
             <ReportButton targetType="event" targetId={event.id} />
           )}
+          <Disclaimer kind="event" />
         </ThemedView>
       </ScrollView>
     </ThemedView>

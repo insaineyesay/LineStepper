@@ -14,6 +14,7 @@ import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTabBarPadding } from '@/hooks/use-tab-bar-padding';
 import { useSession } from '@/lib/auth-context';
+import { Disclaimer } from '@/components/legal-links';
 import { ReportButton } from '@/components/report-button';
 import { isBackendConfigured } from '@/data/backend';
 import {
@@ -286,6 +287,7 @@ export default function CrewDetailScreen() {
             </ThemedView>
           )}
           {session && !isOwner && <ReportButton targetType="crew" targetId={crew.id} />}
+          <Disclaimer kind="crew" />
         </ThemedView>
       </ScrollView>
     </ThemedView>
