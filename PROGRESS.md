@@ -11,7 +11,7 @@ updated" line, move items between sections, add new decisions, and fix
 anything that's become wrong. A stale line here costs the next person far more
 than it costs you to fix it now.
 
-Last updated: 2026-11-12, after #30 merged (#31 open).
+Last updated: 2026-11-12, after #31 merged (only #32, this doc, open).
 
 ---
 
@@ -150,10 +150,12 @@ GETTING_STARTED.md). Sample events and crews come from
 - #29: event flyers and profile photos (needs 0009 run). **A real upload has
   not been tested yet.**
 - #30: event type and skill level, with filters (needs 0010 run).
+- #31: Add to calendar (system sheet on phones, `.ics` and Google link on the web).
 
 ### Open PRs
 
-- #31: Add to calendar (system sheet on phones, `.ics` and Google link on the web).
+- #32: this document. Next up after it merges: the phase 1 work below, one PR
+  at a time.
 
 ### Phase 1 work still to do (in order)
 
@@ -211,9 +213,13 @@ going"; creator verification; a web admin dashboard.
 - **Branches start from an up-to-date `develop`.** PRs go into `develop`. A
   release is a `develop` → `main` PR, opened only when the user asks.
   Heroku and Vercel deploy from `main`.
-- **When any PR merges into `develop`, merge `develop` into every other open PR
-  branch right away**, resolve conflicts, run the checks and push. No open PR
-  should sit in conflict.
+- **Only one PR open at a time.** Don't push or open the next PR until the
+  previous one has merged. Then pull `develop`, bring your branch up to date
+  with it, run the checks, push and open the PR. You can keep working locally
+  on the next piece meanwhile. (Rule from Michael, 2026-11-12, to stop
+  constant merge conflicts.)
+- **If more than one PR is ever open anyway, merge `develop` into the others
+  right after each merge**, resolve conflicts, run the checks and push.
 - **Check a PR is still open before pushing to its branch**
   (`gh pr view <n> --json state`). If it's merged, open a new PR.
 - **Every PR updates CHANGELOG.md** (Keep a Changelog, under Unreleased) **and
@@ -260,4 +266,5 @@ going"; creator verification; a web admin dashboard.
 
 ## 7. Change log of this document
 
-- 2026-11-12: Created from the build history (sessions up to #31).
+- 2026-11-12: Created from the build history (sessions up to #31). Same day:
+  #30 and #31 merged; one-PR-at-a-time rule added.
