@@ -123,7 +123,7 @@ export const TERMS: LegalDocument = {
     {
       heading: '8. Messages and notifications',
       blocks: [
-        'We send sign-in codes and, if you allow it, reminders about events you saved and notices when one changes or is cancelled. When you follow an organizer or join a crew, any contact you have with them, inside or outside the app, is between you and them. We are not responsible for messages, emails or other communication between users, or between users and organizers.',
+        'We send sign-in codes and, if you allow it, reminders about events you saved, notices when one changes or is cancelled, and alerts when someone you follow posts an event. When you follow an organizer or join a crew, any contact you have with them, inside or outside the app, is between you and them. We are not responsible for messages, emails or other communication between users, or between users and organizers.',
       ],
     },
     {

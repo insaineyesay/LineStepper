@@ -11,7 +11,7 @@ updated" line, move items between sections, add new decisions, and fix
 anything that's become wrong. A stale line here costs the next person far more
 than it costs you to fix it now.
 
-Last updated: 2026-11-12, after #33 merged; #34 (change notices) open.
+Last updated: 2026-11-12, after #34 merged; #35 (follower alerts) open.
 
 ---
 
@@ -86,7 +86,7 @@ All four are in the client's shared drive (`0AFEukbbjmOimUk9PVA`).
 - **Database columns that only the server may set** are guarded by triggers:
   `profiles.is_admin` (0003), `profiles.banned_at`, `events/crews.removed_at`
   (0008), `profiles.avatar_url`, `events.flyer_url`, `events.flyer_thumb_url`
-  (0009).
+  (0009), `events.followers_notified_at` (0013).
 - **Telemetry:** every event name is in `packages/shared/src/telemetry/catalog.ts`
   and `packages/shared/src/logging/types.ts` (`LogEvents`). Never type an event
   name by hand; `scripts/telemetry-usage.test.mjs` fails if you do. Logs are
@@ -115,7 +115,8 @@ confirmed running it on the real project.
 | 0009 | `images.sql` | `images` bucket, flyer/photo URL columns and guards | **Not confirmed.** #29 is merged; run before releasing to `main` |
 | 0010 | `event_type_level.sql` | Event type and skill level (#30) | **Not confirmed.** #30 is merged; run before releasing to `main` |
 | 0011 | `notification_outbox.sql` | Queue for change notices and new-event alerts, plus the minute job (#33) | **Not confirmed.** #33 is merged; run it and deploy `send-notifications` (GETTING_STARTED.md) before releasing to `main` |
-| 0012 | `event_change_notices.sql` | Triggers that queue change notices for people who saved an event (PR #34) | No, PR still open. Needs 0011 |
+| 0012 | `event_change_notices.sql` | Triggers that queue change notices for people who saved an event (#34) | **Not confirmed.** #34 is merged; run after 0011, before releasing to `main` |
+| 0013 | `follower_event_alerts.sql` | `events.followers_notified_at` and triggers that queue new-event alerts for followers (PR #35) | No, PR still open. Run after 0011 and 0012 |
 
 The ZIP table is loaded from `supabase/data/zip_codes.csv` (instructions in
 GETTING_STARTED.md). Sample events and crews come from
@@ -155,10 +156,11 @@ GETTING_STARTED.md). Sample events and crews come from
 - #31: Add to calendar (system sheet on phones, `.ics` and Google link on the web).
 - #33: notification outbox and sender (needs 0011 run, and the
   `send-notifications` edge function deployed).
+- #34: change notices for people who saved an event (needs 0012 run).
 
 ### Open PRs
 
-- #34: change notices for saved events (adds 0012).
+- #35: new-event alerts for followers (adds 0013 and the `events.follower_alerts` flag).
 
 ### Phase 1 work still to do (in order)
 
@@ -170,14 +172,16 @@ the PRD gap list below and may change the picks.
    repeated edits merge); `send-notifications` delivers them via Expo and
    deletes them. Chosen over the API because the database can call it only
    when there's work (Dev Discussions §14); cost is effectively zero.
-2. **Change notices for saved events (PRD F3, F9).** In PR #34. Database
+2. **Change notices for saved events (PRD F3, F9).** Done, #34 (merged to `develop`). Database
    triggers on `events` queue the notice (new time, new place, cancelled, no
    longer listed, back on) for bookmarkers with a phone, skipping the
    organizer, banned accounts and blocks. Waits 2 minutes for more edits,
    at most 4. Times are written in Eastern time (the whole launch region);
    revisit if the app expands west.
-3. **New-event alerts for followers (PRD F9).** When someone you follow
-   publishes an event, notify you. Use the same outbox.
+3. **New-event alerts for followers (PRD F9).** In PR #35. On an event's
+   first publish, followers with a phone get "New event from …" after 2
+   minutes (edits update it, unpublishing drops it). `followers_notified_at`
+   stops re-publishing from alerting again. Respects blocks and bans.
 4. **Accessibility pass.** The PRD targets WCAG 2.1 AA and text scaling up to
    200% (many line dancers are older). Check text scaling, screen-reader labels
    and contrast on the main screens, and fix what breaks.
