@@ -1,3 +1,4 @@
+import { Image } from 'expo-image';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { FlatList, Pressable, ScrollView, StyleSheet, TextInput } from 'react-native';
@@ -113,19 +114,29 @@ function EventCard({
 }) {
   return (
     <Pressable onPress={onPress} style={({ pressed }) => pressed && styles.pressed}>
-      <ThemedView type="backgroundElement" style={styles.card}>
-        <ThemedView type="backgroundElement" style={styles.cardHeader}>
-          <ThemedText type="smallBold" style={styles.cardDate}>
-            {formatEventDate(event.starts_at)}
+      <ThemedView type="backgroundElement" style={[styles.card, styles.cardRow]}>
+        <ThemedView type="backgroundElement" style={styles.cardText}>
+          <ThemedView type="backgroundElement" style={styles.cardHeader}>
+            <ThemedText type="smallBold" style={styles.cardDate}>
+              {formatEventDate(event.starts_at)}
+            </ThemedText>
+            {event.is_featured && <ThemedText type="small">★ Featured</ThemedText>}
+          </ThemedView>
+          <ThemedText type="default">{event.title}</ThemedText>
+          <ThemedText type="small" themeColor="textSecondary">
+            {[event.venue_name, event.city].filter(Boolean).join(' · ')}
+            {event.price_text ? ` · ${event.price_text}` : ''}
+            {milesAway !== null ? ` · ${milesAway < 1 ? 'under 1' : Math.round(milesAway)} mi` : ''}
           </ThemedText>
-          {event.is_featured && <ThemedText type="small">★ Featured</ThemedText>}
         </ThemedView>
-        <ThemedText type="default">{event.title}</ThemedText>
-        <ThemedText type="small" themeColor="textSecondary">
-          {[event.venue_name, event.city].filter(Boolean).join(' · ')}
-          {event.price_text ? ` · ${event.price_text}` : ''}
-          {milesAway !== null ? ` · ${milesAway < 1 ? 'under 1' : Math.round(milesAway)} mi` : ''}
-        </ThemedText>
+        {event.flyer_thumb_url && (
+          <Image
+            source={{ uri: event.flyer_thumb_url }}
+            style={styles.thumb}
+            contentFit="cover"
+            accessibilityLabel="Event flyer"
+          />
+        )}
       </ThemedView>
     </Pressable>
   );
@@ -421,6 +432,20 @@ const styles = StyleSheet.create({
     borderRadius: Spacing.three,
     padding: Spacing.three,
     gap: Spacing.one,
+  },
+  cardRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.three,
+  },
+  cardText: {
+    flex: 1,
+    gap: Spacing.one,
+  },
+  thumb: {
+    width: 64,
+    height: 80,
+    borderRadius: Spacing.two,
   },
   cardHeader: {
     flexDirection: 'row',

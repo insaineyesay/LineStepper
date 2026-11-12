@@ -8,6 +8,7 @@ import { LogEvents, type AuthUser, type AuthVerifier, type FlagKey, type Logger 
 
 import type { AccountStore } from './accounts';
 import type { AdminDirectory } from './auth';
+import type { ImageStore } from './images';
 import type { ModerationStore } from './moderation';
 import type { Config } from './config';
 import type { FlagService } from './flags/service';
@@ -17,6 +18,7 @@ import { adminFlagRoutes } from './routes/admin-flags';
 import { flagRoutes } from './routes/flags';
 import { healthRoutes } from './routes/health';
 import { logRoutes } from './routes/logs';
+import { imageRoutes } from './routes/images';
 import { moderationRoutes } from './routes/moderation';
 
 declare module 'fastify' {
@@ -42,6 +44,7 @@ export interface ServerDeps {
   admins: AdminDirectory;
   accounts: AccountStore;
   moderation: ModerationStore;
+  images: ImageStore;
 }
 
 const REQUEST_ID = /^[\w-]{8,64}$/;
@@ -121,6 +124,7 @@ export async function buildServer(deps: ServerDeps): Promise<FastifyInstance> {
   await app.register(logRoutes);
   await app.register(accountRoutes);
   await app.register(moderationRoutes);
+  await app.register(imageRoutes);
 
   return app;
 }

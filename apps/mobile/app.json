@@ -47,6 +47,14 @@
       ],
       "expo-localization",
       [
+        "expo-image-picker",
+        {
+          "photosPermission": "LineUp2Step uses your photos so you can add a profile photo or an event flyer.",
+          "cameraPermission": false,
+          "microphonePermission": false
+        }
+      ],
+      [
         "expo-calendar",
         {
           "calendarPermission": "LineUp2Step adds events you choose to your calendar.",

@@ -22,6 +22,13 @@ Add a line under "Unreleased" in the same pull request as the change.
   profile, finding events and connecting; each post is $0.99 (noted as free
   while paid posting is off). Links to a new FAQ page (`/faq`), also linked
   from the bottom of Profile. "Got it" hides the card on that device.
+- Event flyers and profile photos. Add, change or remove a flyer on the event
+  form and a photo on Profile. Photos are shrunk on the phone before upload.
+  Flyers show on the event page and as thumbnails in the Events list;
+  profile photos show on people's pages. Uploads go through the API
+  (`/images/uploads`, `/images/attach`, `DELETE /images`) into Supabase
+  Storage, and only the API can set image links. Deleting an account deletes
+  its images.
 - Terms of Service and Privacy Policy pages (`/legal/terms`, `/legal/privacy`),
   readable without signing in, linked from the sign-in card and the bottom of
   Profile. Disclaimers at the foot of every event and crew page. Draft text
