@@ -53,6 +53,13 @@
           "cameraPermission": false,
           "microphonePermission": false
         }
+      ],
+      [
+        "expo-calendar",
+        {
+          "calendarPermission": "LineUp2Step adds events you choose to your calendar.",
+          "remindersPermission": false
+        }
       ]
     ],
     "experiments": {
