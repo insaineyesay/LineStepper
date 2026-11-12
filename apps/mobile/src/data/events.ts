@@ -1,4 +1,4 @@
-import type { DanceEvent, EventStatus } from '@/lib/types';
+import type { DanceEvent, EventStatus, EventType, SkillLevel } from '@/lib/types';
 
 import { db } from './backend';
 import { fromResponse, type DataResult } from './result';
@@ -23,6 +23,8 @@ export interface EventInput {
   price_text: string | null;
   ticket_url: string | null;
   status: EventStatus;
+  event_type: EventType | null;
+  skill_level: SkillLevel | null;
 }
 
 export interface EventSummary {
