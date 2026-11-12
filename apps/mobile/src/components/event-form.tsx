@@ -5,6 +5,7 @@ import { ActivityIndicator, StyleSheet, TextInput } from 'react-native';
 import { Button } from './button';
 import { Chip } from './chip';
 import { DraftNotice } from './draft-notice';
+import { PhotoField } from './photo-field';
 import { ThemedText } from './themed-text';
 import { ThemedView } from './themed-view';
 
@@ -14,6 +15,8 @@ import { fetchPostCredits, publishEvent, usePaidPosting } from '@/lib/credits';
 import { useFormDraft } from '@/lib/form-draft';
 import { isZip, lookupZip } from '@/lib/location';
 import { createEvent, updateEvent, type EventInput } from '@/data/events';
+import { removeImage, uploadImage } from '@/data/images';
+import { IMAGE_SIZES, prepareImage } from '@/lib/image-prep';
 import { EVENT_TYPES, SKILL_LEVELS } from '@/lib/event-kinds';
 import { listMetros } from '@/data/reference';
 import type { DanceEvent, EventStatus, Metro, EventType, SkillLevel } from '@/lib/types';
@@ -61,6 +64,12 @@ export function EventForm({ userId, existing, onSaved }: EventFormProps) {
   const [savedId, setSavedId] = useState<string | null>(existing?.id ?? null);
   const [savedStatus, setSavedStatus] = useState<EventStatus | null>(existing?.status ?? null);
   const [credits, setCredits] = useState<number | null>(null);
+  // The flyer is uploaded after the event is saved (it needs the event's id).
+  const [flyer, setFlyer] = useState<{ kind: 'keep' } | { kind: 'new'; uri: string } | { kind: 'remove' }>({
+    kind: 'keep',
+  });
+  const [savedFlyerUrl, setSavedFlyerUrl] = useState<string | null>(existing?.flyer_url ?? null);
+  const flyerPreview = flyer.kind === 'new' ? flyer.uri : flyer.kind === 'remove' ? null : savedFlyerUrl;
   const [needsCredits, setNeedsCredits] = useState(false);
 
   // Autosave what's typed so leaving the form doesn't lose it.
@@ -189,6 +198,15 @@ export function EventForm({ userId, existing, onSaved }: EventFormProps) {
     draft.clear();
     setSavedStatus(payload.status);
 
+    if (id && flyer.kind !== 'keep') {
+      const flyerError = await saveFlyer(id);
+      if (flyerError) {
+        setSaving(false);
+        setMessage(flyerError);
+        return;
+      }
+    }
+
     if (willSpendPost && id) {
       const result = await publishEvent(id);
       if (result === 'no_credits') {
@@ -208,6 +226,32 @@ export function EventForm({ userId, existing, onSaved }: EventFormProps) {
     setSaving(false);
     if (id) onSaved(id);
   };
+
+  /** Uploads or removes the flyer; returns an error message, or null. */
+  async function saveFlyer(eventId: string): Promise<string | null> {
+    try {
+      if (flyer.kind === 'new') {
+        const [full, thumb] = await Promise.all([
+          prepareImage(flyer.uri, IMAGE_SIZES.flyer),
+          prepareImage(flyer.uri, IMAGE_SIZES.thumb),
+        ]);
+        const { data, error } = await uploadImage(
+          { target: 'event', eventId },
+          { full: full.bytes, thumb: thumb.bytes },
+        );
+        if (error) throw new Error(error.message);
+        setSavedFlyerUrl(data.url);
+      } else if (flyer.kind === 'remove') {
+        const { error } = await removeImage({ target: 'event', eventId });
+        if (error) throw new Error(error.message);
+        setSavedFlyerUrl(null);
+      }
+      setFlyer({ kind: 'keep' });
+      return null;
+    } catch {
+      return "Your event is saved, but the flyer didn't upload. Tap the button below to try again.";
+    }
+  }
 
   const inputStyle = [
     styles.input,
@@ -249,6 +293,15 @@ export function EventForm({ userId, existing, onSaved }: EventFormProps) {
         multiline
         numberOfLines={4}
         style={[inputStyle, styles.multiline]}
+      />
+
+      <PhotoField
+        label="Flyer (optional)"
+        shape="flyer"
+        uri={flyerPreview}
+        busy={saving && flyer.kind !== 'keep'}
+        onPicked={(uri) => setFlyer({ kind: 'new', uri })}
+        onRemove={() => setFlyer(savedFlyerUrl ? { kind: 'remove' } : { kind: 'keep' })}
       />
 
       <ThemedView type="backgroundElement" style={styles.row}>

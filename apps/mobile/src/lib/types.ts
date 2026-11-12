@@ -69,6 +69,8 @@ export interface DanceEvent {
   city: string | null;
   metro_id: number | null;
   flyer_url: string | null;
+  /** Small copy of the flyer for lists (migration 0009). */
+  flyer_thumb_url?: string | null;
   organizer_id: string;
   crew_id: string | null;
   status: EventStatus;

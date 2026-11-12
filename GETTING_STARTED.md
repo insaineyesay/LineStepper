@@ -40,6 +40,7 @@ Skip this if someone has already done it for the project you're using.
    6. `0006_zip_radius_search.sql`, then load the ZIP codes (below)
    7. `0007_account_deletion.sql` (lets the API hand off crews when someone deletes their account)
    8. `0008_moderation.sql` (report, block and ban; see "Moderation" below)
+   9. `0009_images.sql` (event flyers and profile photos; see "Images" below)
    10. `0010_event_type_level.sql` (event type and skill level; also tags the sample events)
 3. Optional: run `supabase/seed_sample_data.sql` to add sample events and
    crews.
@@ -314,6 +315,16 @@ You don't need all three running:
 ```sql
 update profiles set is_admin = true where id = '<your user id>';
 ```
+
+**Images.** Event flyers and profile photos are stored in Supabase Storage,
+in a public bucket called `images` that `0009_images.sql` creates. The app
+shrinks every photo before uploading (flyers 1200px wide plus a 400px
+thumbnail for lists, profile photos 400px), so each is roughly 100–250 KB.
+Uploads go through the API, which needs `SUPABASE_SERVICE_ROLE_KEY`. On the
+free plan Supabase includes 1 GB of storage and 5 GB a month of image
+downloads; real use will need the Pro plan ($25/month: 100 GB and 250 GB).
+Check **Settings → Usage** in Supabase to see where you stand. Deleting an
+account deletes that person's photo and flyers.
 
 **Legal pages.** The Terms of Service and Privacy Policy are at `/legal/terms`
 and `/legal/privacy` on the web app (for example

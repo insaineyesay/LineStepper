@@ -1,3 +1,4 @@
+import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import {
@@ -150,6 +151,7 @@ export default function EventDetailScreen() {
               {kindLine(event)}
             </ThemedText>
           )}
+          {event.flyer_url && <Flyer uri={event.flyer_url} />}
 
           <ThemedView type="backgroundElement" style={styles.card}>
             <ThemedText type="smallBold" style={styles.uppercase}>
@@ -296,3 +298,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 });
+
+/** The event's flyer, full width, at its own shape (flyers are usually portrait). */
+function Flyer({ uri }: { uri: string }) {
+  const [ratio, setRatio] = useState(4 / 5);
+  return (
+    <Image
+      source={{ uri }}
+      style={{ width: '100%', aspectRatio: ratio, borderRadius: Spacing.three }}
+      contentFit="contain"
+      accessibilityLabel="Event flyer"
+      onLoad={(e) => {
+        const { width, height } = e.source;
+        if (width && height) setRatio(width / height);
+      }}
+    />
+  );
+}
