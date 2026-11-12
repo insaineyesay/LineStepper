@@ -133,3 +133,20 @@ insert into public.events
    'TBD', 'Richmond', 2,
    '33333333-3333-4333-8333-333333333333', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'draft', false, null)
 on conflict (id) do nothing;
+
+-- Types and levels for the sample events (migration 0010), so the filters
+-- have something to show. Needs 0010 to have run. It only touches these
+-- sample ids, so it's safe to run on a database with real events too.
+update public.events set event_type = v.t, skill_level = v.l
+from (values
+  ('e0000001-0000-4000-8000-000000000001'::uuid, 'social', 'all'),
+  ('e0000001-0000-4000-8000-000000000002'::uuid, 'social', 'all'),
+  ('e0000001-0000-4000-8000-000000000003'::uuid, 'class', 'beginner'),
+  ('e0000001-0000-4000-8000-000000000004'::uuid, 'social', 'intermediate'),
+  ('e0000001-0000-4000-8000-000000000005'::uuid, 'social', 'all'),
+  ('e0000001-0000-4000-8000-000000000006'::uuid, 'competition', 'advanced'),
+  ('e0000001-0000-4000-8000-000000000007'::uuid, 'social', 'all'),
+  ('e0000001-0000-4000-8000-000000000008'::uuid, 'social', 'all'),
+  ('e0000001-0000-4000-8000-000000000009'::uuid, 'festival', 'all')
+) as v(id, t, l)
+where public.events.id = v.id;

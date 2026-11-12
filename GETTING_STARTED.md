@@ -40,6 +40,7 @@ Skip this if someone has already done it for the project you're using.
    6. `0006_zip_radius_search.sql`, then load the ZIP codes (below)
    7. `0007_account_deletion.sql` (lets the API hand off crews when someone deletes their account)
    8. `0008_moderation.sql` (report, block and ban; see "Moderation" below)
+   10. `0010_event_type_level.sql` (event type and skill level; also tags the sample events)
 3. Optional: run `supabase/seed_sample_data.sql` to add sample events and
    crews.
 4. Make sign-in emails contain a code. The app signs you in with a 6-digit

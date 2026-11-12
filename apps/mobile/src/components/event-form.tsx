@@ -14,8 +14,9 @@ import { fetchPostCredits, publishEvent, usePaidPosting } from '@/lib/credits';
 import { useFormDraft } from '@/lib/form-draft';
 import { isZip, lookupZip } from '@/lib/location';
 import { createEvent, updateEvent, type EventInput } from '@/data/events';
+import { EVENT_TYPES, SKILL_LEVELS } from '@/lib/event-kinds';
 import { listMetros } from '@/data/reference';
-import type { DanceEvent, EventStatus, Metro } from '@/lib/types';
+import type { DanceEvent, EventStatus, Metro, EventType, SkillLevel } from '@/lib/types';
 
 interface EventFormProps {
   userId: string;
@@ -50,6 +51,8 @@ export function EventForm({ userId, existing, onSaved }: EventFormProps) {
   const [priceText, setPriceText] = useState(existing?.price_text ?? '');
   const [ticketUrl, setTicketUrl] = useState(existing?.ticket_url ?? '');
   const [status, setStatus] = useState<EventStatus>(existing?.status ?? 'draft');
+  const [eventType, setEventType] = useState<EventType | null>(existing?.event_type ?? null);
+  const [skillLevel, setSkillLevel] = useState<SkillLevel | null>(existing?.skill_level ?? 'all');
   const [metros, setMetros] = useState<Metro[]>([]);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -63,6 +66,7 @@ export function EventForm({ userId, existing, onSaved }: EventFormProps) {
   // Autosave what's typed so leaving the form doesn't lose it.
   const fields = {
     title, description, date, time, venueName, address, city, zip, metroId, priceText, ticketUrl, status,
+    eventType, skillLevel,
   };
   const [initialFields] = useState(() => fields);
   const draft = useFormDraft(`event.${existing?.id ?? 'new'}.${userId}`, fields, initialFields, (v) => {
@@ -78,6 +82,8 @@ export function EventForm({ userId, existing, onSaved }: EventFormProps) {
     setPriceText(v.priceText);
     setTicketUrl(v.ticketUrl);
     setStatus(v.status);
+    setEventType(v.eventType ?? null);
+    setSkillLevel(v.skillLevel ?? 'all');
   });
 
   useEffect(() => {
@@ -111,6 +117,10 @@ export function EventForm({ userId, existing, onSaved }: EventFormProps) {
     setMessage(null);
     if (!title.trim()) {
       setMessage('Give the event a title.');
+      return;
+    }
+    if (!eventType) {
+      setMessage('Choose what kind of event it is (class, social, workshop…).');
       return;
     }
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date.trim()) || !/^\d{1,2}:\d{2}$/.test(time.trim())) {
@@ -148,6 +158,8 @@ export function EventForm({ userId, existing, onSaved }: EventFormProps) {
       metro_id: metroId,
       price_text: priceText.trim() || null,
       ticket_url: ticketUrl.trim() || null,
+      event_type: eventType,
+      skill_level: skillLevel,
       // When this save spends a post, store the details first without
       // publishing, then publish through publishEvent() below.
       status: willSpendPost ? (savedStatus ?? 'draft') : status,
@@ -213,6 +225,20 @@ export function EventForm({ userId, existing, onSaved }: EventFormProps) {
         placeholderTextColor={theme.textSecondary}
         style={inputStyle}
       />
+
+      <ThemedText type="small">Type of event</ThemedText>
+      <ThemedView type="backgroundElement" style={styles.chipRow}>
+        {EVENT_TYPES.map((t) => (
+          <Chip key={t.value} label={t.label} selected={eventType === t.value} onPress={() => setEventType(t.value)} />
+        ))}
+      </ThemedView>
+
+      <ThemedText type="small">Skill level</ThemedText>
+      <ThemedView type="backgroundElement" style={styles.chipRow}>
+        {SKILL_LEVELS.map((l) => (
+          <Chip key={l.value} label={l.label} selected={skillLevel === l.value} onPress={() => setSkillLevel(l.value)} />
+        ))}
+      </ThemedView>
 
       <ThemedText type="small">Description</ThemedText>
       <TextInput
