@@ -33,15 +33,20 @@ function formatFullDate(iso: string) {
   });
 }
 
-function reminderNote(remindersOn: boolean, pushStatus: PushStatus): string {
-  if (!remindersOn) return 'Saved to your profile.';
+function reminderNote(reminders: boolean, changeAlerts: boolean, pushStatus: PushStatus): string {
+  if (!reminders && !changeAlerts) return 'Saved to your profile.';
   switch (pushStatus) {
     case 'granted':
-      return "Saved to your profile. We'll send you a reminder about a day before it starts.";
+      if (reminders && changeAlerts) {
+        return "Saved to your profile. We'll remind you about a day before, and tell you if it changes or is cancelled.";
+      }
+      return reminders
+        ? "Saved to your profile. We'll send you a reminder about a day before it starts."
+        : "Saved to your profile. We'll tell you if it changes or is cancelled.";
     case 'denied':
-      return 'Saved to your profile. Turn on notifications for LineStepper in Settings to get a reminder before it starts.';
+      return 'Saved to your profile. Turn on notifications for LineStepper in Settings to hear about reminders and changes.';
     case 'unsupported':
-      return 'Saved to your profile. Get the LineStepper app to be reminded before it starts.';
+      return 'Saved to your profile. Get the LineStepper app to be reminded before it starts and told if it changes.';
     default:
       return 'Saved to your profile.';
   }
@@ -57,8 +62,10 @@ export default function EventDetailScreen() {
   const [bookmarked, setBookmarked] = useState(false);
   const [bookmarkBusy, setBookmarkBusy] = useState(false);
   const remindersFlag = useFlag('events.reminders');
+  const changeAlertsFlag = useFlag('events.change_alerts');
   const pushFlag = useFlag('notify.push');
   const remindersOn = remindersFlag && pushFlag;
+  const changeAlertsOn = changeAlertsFlag && pushFlag;
   const [pushStatus, setPushStatus] = useState<PushStatus>('undetermined');
 
   useEffect(() => {
@@ -101,8 +108,8 @@ export default function EventDetailScreen() {
       const { error } = await addBookmark(session.user.id, event.id);
       if (!error) {
         setBookmarked(true);
-        // Bookmarking is when reminders make sense, so ask for notifications here.
-        if (remindersOn) {
+        // Bookmarking is when reminders and change notices make sense, so ask for notifications here.
+        if (remindersOn || changeAlertsOn) {
           const result = await registerForPushAsync({ prompt: true });
           setPushStatus(
             result === 'registered' ? 'granted' : result === 'denied' ? 'denied' : await getPushStatusAsync()
@@ -229,7 +236,7 @@ export default function EventDetailScreen() {
           )}
           {session && bookmarked && (
             <ThemedText type="small" themeColor="textSecondary">
-              {reminderNote(remindersOn, pushStatus)}
+              {reminderNote(remindersOn, changeAlertsOn, pushStatus)}
             </ThemedText>
           )}
           {session?.user.id === event.organizer_id && event.removed_at && (

@@ -11,7 +11,7 @@ updated" line, move items between sections, add new decisions, and fix
 anything that's become wrong. A stale line here costs the next person far more
 than it costs you to fix it now.
 
-Last updated: 2026-11-12, notification outbox PR opened (#30, #31, #32 still open).
+Last updated: 2026-11-12, change notices PR opened (#30–#33 still open).
 
 ---
 
@@ -115,6 +115,7 @@ confirmed running it on the real project.
 | 0009 | `images.sql` | `images` bucket, flyer/photo URL columns and guards | **Not confirmed.** #29 is merged; run before releasing to `main` |
 | 0010 | `event_type_level.sql` | Event type and skill level (PR #30) | No, PR still open |
 | 0011 | `notification_outbox.sql` | Queue for change notices and new-event alerts, plus the minute job (PR #33) | No, PR still open. Also deploy `send-notifications` (GETTING_STARTED.md) |
+| 0012 | `event_change_notices.sql` | Triggers that queue change notices for people who saved an event (PR #CHANGES) | No, PR still open. Needs 0011 |
 
 The ZIP table is loaded from `supabase/data/zip_codes.csv` (instructions in
 GETTING_STARTED.md). Sample events and crews come from
@@ -157,6 +158,7 @@ GETTING_STARTED.md). Sample events and crews come from
 - #31: Add to calendar (system sheet on phones, `.ics` and Google link on the web).
 - #32: this file.
 - #33: notification outbox and sender (adds 0011 and `send-notifications`).
+- #CHANGES: change notices for saved events (adds 0012; stacked on #33).
 
 ### Phase 1 work still to do (in order)
 
@@ -168,10 +170,12 @@ the PRD gap list below and may change the picks.
    repeated edits merge); `send-notifications` delivers them via Expo and
    deletes them. Chosen over the API because the database can call it only
    when there's work (Dev Discussions §14); cost is effectively zero.
-2. **Change notices for saved events (PRD F3, F9).** When a published event's
-   date, time or venue changes, or it's cancelled, notify everyone who
-   bookmarked it, within about 5 minutes. The `events.change_alerts` flag
-   already exists but nothing sends yet.
+2. **Change notices for saved events (PRD F3, F9).** In PR #CHANGES. Database
+   triggers on `events` queue the notice (new time, new place, cancelled, no
+   longer listed, back on) for bookmarkers with a phone, skipping the
+   organizer, banned accounts and blocks. Waits 2 minutes for more edits,
+   at most 4. Times are written in Eastern time (the whole launch region);
+   revisit if the app expands west.
 3. **New-event alerts for followers (PRD F9).** When someone you follow
    publishes an event, notify you. Use the same outbox.
 4. **Accessibility pass.** The PRD targets WCAG 2.1 AA and text scaling up to

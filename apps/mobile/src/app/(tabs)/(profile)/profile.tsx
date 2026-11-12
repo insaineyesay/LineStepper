@@ -168,7 +168,8 @@ function BookmarksCard({ userId }: { userId: string }) {
       {bookmarks.length === 0 ? (
         <ThemedText type="small" themeColor="textSecondary">
           Bookmark events from the calendar and they&apos;ll show up here. In the
-          app, you&apos;ll get a reminder about a day before each one.
+          app, you&apos;ll get a reminder about a day before each one, and a
+          notice if one changes or is cancelled.
         </ThemedText>
       ) : (
         bookmarks.map((bookmark) => (
