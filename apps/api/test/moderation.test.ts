@@ -4,6 +4,7 @@ import type { AuthVerifier } from '@linestepper/shared';
 
 import { noAccountStore } from '../src/accounts';
 import { loadConfig } from '../src/config';
+import { noImageStore } from '../src/images';
 import { FlagService } from '../src/flags/service';
 import { MemoryFlagStore } from '../src/flags/store';
 import { createServerLogging } from '../src/logging';
@@ -101,6 +102,7 @@ async function setup() {
     admins: { isAdmin: async (id) => s.admins.has(id) },
     accounts: noAccountStore,
     moderation: store,
+    images: noImageStore,
   });
   await app.ready();
   const as = (user: string) => ({ authorization: `Bearer ${user}` });

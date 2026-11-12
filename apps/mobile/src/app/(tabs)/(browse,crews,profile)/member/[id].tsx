@@ -1,3 +1,4 @@
+import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import {
@@ -129,6 +130,9 @@ export default function MemberScreen() {
           {profile.tier === 'featured' && (
             <ThemedText type="smallBold">★ Featured</ThemedText>
           )}
+          {profile.avatar_url && (
+            <Image source={{ uri: profile.avatar_url }} style={styles.avatar} contentFit="cover" accessibilityLabel={`${name}'s photo`} />
+          )}
           <ThemedText type="subtitle">{name}</ThemedText>
 
           <ThemedView type="backgroundElement" style={styles.card}>
@@ -222,6 +226,11 @@ export default function MemberScreen() {
 }
 
 const styles = StyleSheet.create({
+  avatar: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+  },
   container: {
     flex: 1,
   },

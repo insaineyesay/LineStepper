@@ -4,6 +4,7 @@ import type { AuthVerifier } from '@linestepper/shared';
 
 import { AccountsUnavailableError, type AccountStore } from '../src/accounts';
 import { loadConfig } from '../src/config';
+import { noImageStore } from '../src/images';
 import { noModerationStore } from '../src/moderation';
 import { FlagService } from '../src/flags/service';
 import { MemoryFlagStore } from '../src/flags/store';
@@ -19,7 +20,7 @@ function fakeAccounts() {
     async deleteAccount(id) {
       if (id === 'u-fail') throw new Error('db down');
       deleted.push(id);
-      return { crewsHandedOff: 1, crewsDeleted: 0 };
+      return { crewsHandedOff: 1, crewsDeleted: 0, imagesRemoved: true };
     },
   };
   return store;
@@ -43,6 +44,7 @@ async function setup(accounts: AccountStore = fakeAccounts()) {
     admins: { isAdmin: async (id) => id === 'admin' },
     accounts,
     moderation: noModerationStore,
+    images: noImageStore,
   });
   // A route behind a flag that is off by default, to prove server-side enforcement.
   app.get('/bookings', { preHandler: app.requireFlag('booking') }, async () => ({ ok: true }));
@@ -166,7 +168,7 @@ describe('API', () => {
     const config = loadConfig({ AUTH_PROVIDER: 'none', NODE_ENV: 'test', CORS_ORIGINS: 'https://web.example' } as NodeJS.ProcessEnv);
     const flags = new FlagService(new MemoryFlagStore(), undefined);
     const { bus, logger } = createServerLogging(config, (k) => flags.isOn(k), [memoryConnector('stdout', { alwaysOn: true })]);
-    const app = await buildServer({ config, logger, bus, flags, auth: fakeAuth, admins: { isAdmin: async () => false }, accounts: fakeAccounts(), moderation: noModerationStore });
+    const app = await buildServer({ config, logger, bus, flags, auth: fakeAuth, admins: { isAdmin: async () => false }, accounts: fakeAccounts(), moderation: noModerationStore, images: noImageStore });
     const res = await app.inject({
       method: 'OPTIONS',
       url: '/me',

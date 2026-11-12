@@ -52,6 +52,8 @@ export const LogEvents = {
   userBlocked: 'user.blocked',
   userUnblocked: 'user.unblocked',
   moderationAction: 'moderation.action',
+  imageAttached: 'image.attached',
+  imageRemoved: 'image.removed',
   authSignOut: 'auth.sign_out',
   authError: 'auth.error',
   flagsLoaded: 'flags.loaded',

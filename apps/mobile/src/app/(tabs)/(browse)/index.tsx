@@ -1,15 +1,27 @@
-import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { FlatList, Pressable, ScrollView, StyleSheet, TextInput } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Image } from "expo-image";
+import { useFocusEffect, useRouter } from "expo-router";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  FlatList,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  TextInput,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-import { Button } from '@/components/button';
-import { Chip } from '@/components/chip';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { BottomTabInset, MaxContentWidth, Spacing, TabRootTopInset } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
-import { useSession } from '@/lib/auth-context';
+import { Button } from "@/components/button";
+import { Chip } from "@/components/chip";
+import { ThemedText } from "@/components/themed-text";
+import { ThemedView } from "@/components/themed-view";
+import {
+  BottomTabInset,
+  MaxContentWidth,
+  Spacing,
+  TabRootTopInset,
+} from "@/constants/theme";
+import { useTheme } from "@/hooks/use-theme";
+import { useSession } from "@/lib/auth-context";
 import {
   DEFAULT_RADIUS,
   distanceMiles,
@@ -19,87 +31,88 @@ import {
   RADIUS_OPTIONS,
   type Coords,
   type RadiusMiles,
-} from '@/lib/location';
-import { isBackendConfigured } from '@/data/backend';
-import { listEventsNear, listUpcomingEvents } from '@/data/events';
-import { getProfileZip } from '@/data/profiles';
-import type { DanceEvent } from '@/lib/types';
+} from "@/lib/location";
+import { isBackendConfigured } from "@/data/backend";
+import { listEventsNear, listUpcomingEvents } from "@/data/events";
+import { getProfileZip } from "@/data/profiles";
+import type { DanceEvent } from "@/lib/types";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 const DATE_FILTERS = [
-  { key: 'all', label: 'All upcoming', days: null },
-  { key: '7d', label: 'This week', days: 7 },
-  { key: '30d', label: 'This month', days: 30 },
+  { key: "all", label: "All upcoming", days: null },
+  { key: "7d", label: "This week", days: 7 },
+  { key: "30d", label: "This month", days: 30 },
 ] as const;
 
-type DateFilterKey = (typeof DATE_FILTERS)[number]['key'];
+type DateFilterKey = (typeof DATE_FILTERS)[number]["key"];
 
 // Placeholder data so the calendar has life before Supabase is connected.
 const SAMPLE_EVENTS: DanceEvent[] = [
   {
-    id: 'sample-1',
-    title: 'Soul Line Saturday',
-    description: 'All-levels social with line dance instruction the first hour.',
+    id: "sample-1",
+    title: "Soul Line Saturday",
+    description:
+      "All-levels social with line dance instruction the first hour.",
     starts_at: new Date(Date.now() + 3 * DAY_MS).toISOString(),
     ends_at: null,
-    venue_name: 'The Grand Ballroom',
+    venue_name: "The Grand Ballroom",
     address: null,
-    city: 'Norfolk',
+    city: "Norfolk",
     metro_id: 1,
     flyer_url: null,
-    organizer_id: 'sample',
+    organizer_id: "sample",
     crew_id: null,
-    status: 'published',
+    status: "published",
     is_featured: true,
-    price_text: '$10 at the door',
+    price_text: "$10 at the door",
     ticket_url: null,
     zip: null,
     lat: null,
     lng: null,
-    created_at: '',
-    updated_at: '',
+    created_at: "",
+    updated_at: "",
   },
   {
-    id: 'sample-2',
-    title: 'RVA Line Dance Social',
-    description: 'Monthly social hosted by the Richmond Smooth Steppers.',
+    id: "sample-2",
+    title: "RVA Line Dance Social",
+    description: "Monthly social hosted by the Richmond Smooth Steppers.",
     starts_at: new Date(Date.now() + 8 * DAY_MS).toISOString(),
     ends_at: null,
-    venue_name: 'Community Center West',
+    venue_name: "Community Center West",
     address: null,
-    city: 'Richmond',
+    city: "Richmond",
     metro_id: 2,
     flyer_url: null,
-    organizer_id: 'sample',
+    organizer_id: "sample",
     crew_id: null,
-    status: 'published',
+    status: "published",
     is_featured: false,
-    price_text: 'Free',
+    price_text: "Free",
     ticket_url: null,
     zip: null,
     lat: null,
     lng: null,
-    created_at: '',
-    updated_at: '',
+    created_at: "",
+    updated_at: "",
   },
 ];
 
 export function formatEventDate(iso: string) {
   return new Date(iso).toLocaleString(undefined, {
-    weekday: 'short',
-    month: 'short',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
   });
 }
 
 /** Where "near" searches are measured from. */
 type Origin =
-  | { kind: 'anywhere' }
-  | { kind: 'me'; coords: Coords }
-  | { kind: 'zip'; zip: string; coords: Coords };
+  | { kind: "anywhere" }
+  | { kind: "me"; coords: Coords }
+  | { kind: "zip"; zip: string; coords: Coords };
 
 function EventCard({
   event,
@@ -111,20 +124,40 @@ function EventCard({
   onPress: () => void;
 }) {
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => pressed && styles.pressed}>
-      <ThemedView type="backgroundElement" style={styles.card}>
-        <ThemedView type="backgroundElement" style={styles.cardHeader}>
-          <ThemedText type="smallBold" style={styles.cardDate}>
-            {formatEventDate(event.starts_at)}
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => pressed && styles.pressed}
+    >
+      <ThemedView
+        type="backgroundElement"
+        style={[styles.card, styles.cardRow]}
+      >
+        <ThemedView type="backgroundElement" style={styles.cardText}>
+          <ThemedView type="backgroundElement" style={styles.cardHeader}>
+            <ThemedText type="smallBold" style={styles.cardDate}>
+              {formatEventDate(event.starts_at)}
+            </ThemedText>
+            {event.is_featured && (
+              <ThemedText type="small">★ Featured</ThemedText>
+            )}
+          </ThemedView>
+          <ThemedText type="default">{event.title}</ThemedText>
+          <ThemedText type="small" themeColor="textSecondary">
+            {[event.venue_name, event.city].filter(Boolean).join(" · ")}
+            {event.price_text ? ` · ${event.price_text}` : ""}
+            {milesAway !== null
+              ? ` · ${milesAway < 1 ? "under 1" : Math.round(milesAway)} mi`
+              : ""}
           </ThemedText>
-          {event.is_featured && <ThemedText type="small">★ Featured</ThemedText>}
         </ThemedView>
-        <ThemedText type="default">{event.title}</ThemedText>
-        <ThemedText type="small" themeColor="textSecondary">
-          {[event.venue_name, event.city].filter(Boolean).join(' · ')}
-          {event.price_text ? ` · ${event.price_text}` : ''}
-          {milesAway !== null ? ` · ${milesAway < 1 ? 'under 1' : Math.round(milesAway)} mi` : ''}
-        </ThemedText>
+        {event.flyer_thumb_url && (
+          <Image
+            source={{ uri: event.flyer_thumb_url }}
+            style={styles.thumb}
+            contentFit="cover"
+            accessibilityLabel="Event flyer"
+          />
+        )}
       </ThemedView>
     </Pressable>
   );
@@ -136,10 +169,10 @@ export default function EventsScreen() {
   const { session } = useSession();
   const [events, setEvents] = useState<DanceEvent[]>(SAMPLE_EVENTS);
   const [usingSampleData, setUsingSampleData] = useState(true);
-  const [search, setSearch] = useState('');
-  const [origin, setOrigin] = useState<Origin>({ kind: 'anywhere' });
+  const [search, setSearch] = useState("");
+  const [origin, setOrigin] = useState<Origin>({ kind: "anywhere" });
   const [radius, setRadius] = useState<RadiusMiles>(DEFAULT_RADIUS);
-  const [zipInput, setZipInput] = useState('');
+  const [zipInput, setZipInput] = useState("");
   const [locating, setLocating] = useState(false);
   const [nearMessage, setNearMessage] = useState<string | null>(null);
   // Once someone picks a location themselves, don't replace it with their
@@ -148,7 +181,7 @@ export default function EventsScreen() {
   const [dateFilter, setDateFilter] = useState<{
     key: DateFilterKey;
     cutoff: number | null;
-  }>({ key: 'all', cutoff: null });
+  }>({ key: "all", cutoff: null });
 
   // Start near the signed-in person's ZIP (PRD: events within 25 miles).
   const userId = session?.user.id;
@@ -160,7 +193,7 @@ export default function EventsScreen() {
       if (!zip || cancelled || pickedOrigin.current) return;
       const coords = await lookupZip(zip);
       if (coords && !cancelled && !pickedOrigin.current) {
-        setOrigin({ kind: 'zip', zip, coords });
+        setOrigin({ kind: "zip", zip, coords });
         setZipInput(zip);
       }
     })();
@@ -178,7 +211,9 @@ export default function EventsScreen() {
       }
       let cancelled = false;
       const request =
-        origin.kind === 'anywhere' ? listUpcomingEvents() : listEventsNear(origin.coords, radius);
+        origin.kind === "anywhere"
+          ? listUpcomingEvents()
+          : listEventsNear(origin.coords, radius);
       request.then(({ data, error }) => {
         if (!cancelled && !error) {
           setEvents(data);
@@ -188,13 +223,13 @@ export default function EventsScreen() {
       return () => {
         cancelled = true;
       };
-    }, [origin, radius])
+    }, [origin, radius]),
   );
 
   const chooseAnywhere = () => {
     pickedOrigin.current = true;
     setNearMessage(null);
-    setOrigin({ kind: 'anywhere' });
+    setOrigin({ kind: "anywhere" });
   };
 
   const chooseNearMe = async () => {
@@ -203,24 +238,26 @@ export default function EventsScreen() {
     setLocating(true);
     const result = await getDeviceLocation();
     setLocating(false);
-    if (result === 'denied') {
-      setNearMessage('Location is off for LineUp2Step. Enter a ZIP code instead, or allow location in Settings.');
-    } else if (result === 'unavailable') {
+    if (result === "denied") {
+      setNearMessage(
+        "Location is off for LineUp2Step. Enter a ZIP code instead, or allow location in Settings.",
+      );
+    } else if (result === "unavailable") {
       setNearMessage("Couldn't find your location. Enter a ZIP code instead.");
     } else {
-      setOrigin({ kind: 'me', coords: result });
+      setOrigin({ kind: "me", coords: result });
     }
   };
 
   const changeZip = async (text: string) => {
-    const zip = text.replace(/[^0-9]/g, '').slice(0, 5);
+    const zip = text.replace(/[^0-9]/g, "").slice(0, 5);
     setZipInput(zip);
     if (!isZip(zip)) return;
     pickedOrigin.current = true;
     setNearMessage(null);
     const coords = await lookupZip(zip);
     if (coords) {
-      setOrigin({ kind: 'zip', zip, coords });
+      setOrigin({ kind: "zip", zip, coords });
     } else {
       setNearMessage(`We don't recognize ZIP ${zip}.`);
     }
@@ -242,7 +279,7 @@ export default function EventsScreen() {
     });
   }, [events, search, dateFilter]);
 
-  const originCoords = origin.kind === 'anywhere' ? null : origin.coords;
+  const originCoords = origin.kind === "anywhere" ? null : origin.coords;
 
   return (
     <ThemedView style={styles.container}>
@@ -264,7 +301,8 @@ export default function EventsScreen() {
           horizontal
           showsHorizontalScrollIndicator={false}
           style={styles.chipScroll}
-          contentContainerStyle={styles.chipRow}>
+          contentContainerStyle={styles.chipRow}
+        >
           {DATE_FILTERS.map((filter) => (
             <Chip
               key={filter.key}
@@ -273,7 +311,9 @@ export default function EventsScreen() {
               onPress={() =>
                 setDateFilter({
                   key: filter.key,
-                  cutoff: filter.days ? Date.now() + filter.days * DAY_MS : null,
+                  cutoff: filter.days
+                    ? Date.now() + filter.days * DAY_MS
+                    : null,
                 })
               }
             />
@@ -284,11 +324,16 @@ export default function EventsScreen() {
           showsHorizontalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
           style={styles.chipScroll}
-          contentContainerStyle={styles.chipRow}>
-          <Chip label="Anywhere" selected={origin.kind === 'anywhere'} onPress={chooseAnywhere} />
+          contentContainerStyle={styles.chipRow}
+        >
           <Chip
-            label={locating ? 'Finding you…' : 'Near me'}
-            selected={origin.kind === 'me'}
+            label="Anywhere"
+            selected={origin.kind === "anywhere"}
+            onPress={chooseAnywhere}
+          />
+          <Chip
+            label={locating ? "Finding you…" : "Near me"}
+            selected={origin.kind === "me"}
             onPress={() => void chooseNearMe()}
           />
           <TextInput
@@ -302,18 +347,22 @@ export default function EventsScreen() {
             style={[
               styles.zipInput,
               {
-                backgroundColor: origin.kind === 'zip' ? theme.backgroundSelected : theme.backgroundElement,
+                backgroundColor:
+                  origin.kind === "zip"
+                    ? theme.backgroundSelected
+                    : theme.backgroundElement,
                 color: theme.text,
               },
             ]}
           />
         </ScrollView>
-        {origin.kind !== 'anywhere' && (
+        {origin.kind !== "anywhere" && (
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
             style={styles.chipScroll}
-            contentContainerStyle={styles.chipRow}>
+            contentContainerStyle={styles.chipRow}
+          >
             {RADIUS_OPTIONS.map((miles) => (
               <Chip
                 key={miles}
@@ -337,7 +386,7 @@ export default function EventsScreen() {
         {session && (
           <Button
             label="+ Post an event"
-            onPress={() => router.push('/event/new')}
+            onPress={() => router.push("/event/new")}
           />
         )}
         <FlatList
@@ -348,19 +397,25 @@ export default function EventsScreen() {
               event={item}
               milesAway={
                 originCoords && item.lat !== null && item.lng !== null
-                  ? distanceMiles(originCoords, { lat: item.lat, lng: item.lng })
+                  ? distanceMiles(originCoords, {
+                      lat: item.lat,
+                      lng: item.lng,
+                    })
                   : null
               }
               onPress={() =>
-                router.push({ pathname: '/event/[id]', params: { id: item.id } })
+                router.push({
+                  pathname: "/event/[id]",
+                  params: { id: item.id },
+                })
               }
             />
           )}
           contentContainerStyle={styles.list}
           ListEmptyComponent={
             <ThemedText themeColor="textSecondary" style={styles.empty}>
-              {origin.kind === 'anywhere'
-                ? 'No events match your filters.'
+              {origin.kind === "anywhere"
+                ? "No events match your filters."
                 : `No events within ${radius} miles. Try a wider distance.`}
             </ThemedText>
           }
@@ -373,8 +428,8 @@ export default function EventsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    flexDirection: 'row',
-    justifyContent: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
   },
   safeArea: {
     flex: 1,
@@ -398,7 +453,7 @@ const styles = StyleSheet.create({
   },
   chipRow: {
     gap: Spacing.two,
-    alignItems: 'center',
+    alignItems: "center",
   },
   // Sized and shaped like a chip so it sits in the same row.
   zipInput: {
@@ -409,7 +464,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     fontWeight: 500,
-    textAlign: 'center',
+    textAlign: "center",
   },
   list: {
     gap: Spacing.three,
@@ -420,19 +475,33 @@ const styles = StyleSheet.create({
     padding: Spacing.three,
     gap: Spacing.one,
   },
+  cardRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.three,
+  },
+  cardText: {
+    flex: 1,
+    gap: Spacing.one,
+  },
+  thumb: {
+    width: 64,
+    height: 80,
+    borderRadius: Spacing.two,
+  },
   cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   cardDate: {
-    textTransform: 'uppercase',
+    textTransform: "uppercase",
   },
   pressed: {
     opacity: 0.7,
   },
   empty: {
-    textAlign: 'center',
+    textAlign: "center",
     paddingTop: Spacing.five,
   },
 });
