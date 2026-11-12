@@ -101,25 +101,14 @@ table (changed by admins at runtime). The API enforces flags: a route behind
 (drives reminders) · `push_tokens` (one per device, for reminders) · `post_credit_ledger` (post credits bought and spent) · `zip_codes` (US ZIP centers for radius search) · `follows` · `subscriptions` (Stripe mirror, written only
 by webhooks) · `metros` (launch-region filter list).
 
-## Roadmap
+## Status and roadmap
 
-0. **Foundations** — monorepo, feature flags, pluggable logging, and the
-   pluggable auth interface (done; see above).
-1. **Auth** — Apple / Google / Facebook sign-in (`expo-apple-authentication`,
-   `@react-native-google-signin`, Facebook via Supabase OAuth), profile setup
-   flow (handle, home metro, role).
-2. **Events v1** — event detail screen, date filters, radius search (ZIP or
-   phone location, 5–100 mi), bookmarking.
-3. **Reminders** — Expo push notifications; Supabase cron + edge function
-   sends reminders for bookmarked events (built; setup in
-   GETTING_STARTED.md, "Event reminders").
-4. **Crews v1** — crew detail, join requests, member management.
-5. **Paid side** — per the client's PRD (v0.2): $0.99 per event post. Post
-   credits, the publish gate and Stripe checkout on the web are built (setup
-   in GETTING_STARTED.md, "Paid posting"); Apple / Google in-app purchase
-   needs the store accounts. The $0.99 app price is set in the stores.
-6. **Polish & beta** — replace placeholder tab icons and app icon/splash,
-   TestFlight + Play internal testing with a founding crew.
+**v0.1.0** (2026-11-12): events with radius search, filters by type and level,
+bookmarks, reminders, add to calendar; posting with drafts, flyers and paid
+posting (switched off); crews; profiles with photos and follows; change
+notices and new-event alerts; account deletion; report, block and
+moderation; legal pages (draft text); telemetry; the API on Heroku.
 
-Later: merch pages (link out first, commerce much later), step-sheet /
-dance tracking, in-app ticketing.
+What's live, what's left, and how it all fits together is kept in
+[PROGRESS.md](PROGRESS.md), the living handoff document. Release history is
+in [CHANGELOG.md](CHANGELOG.md).

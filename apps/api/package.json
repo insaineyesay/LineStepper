@@ -1,6 +1,6 @@
 {
   "name": "@linestepper/api",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": true,
   "type": "module",
   "description": "LineStepper API: feature flags, log ingest, and (later) the domain modules. Deployed to Heroku.",
