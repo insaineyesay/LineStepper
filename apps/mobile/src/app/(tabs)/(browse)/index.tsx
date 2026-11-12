@@ -12,6 +12,7 @@ import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, MaxContentWidth, Spacing, TabRootTopInset } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useSession } from '@/lib/auth-context';
+import { EVENT_TYPES, SKILL_LEVELS, kindLine, matchesLevel } from '@/lib/event-kinds';
 import {
   DEFAULT_RADIUS,
   distanceMiles,
@@ -25,7 +26,7 @@ import {
 import { isBackendConfigured } from '@/data/backend';
 import { listEventsNear, listUpcomingEvents } from '@/data/events';
 import { getProfileZip } from '@/data/profiles';
-import type { DanceEvent } from '@/lib/types';
+import type { DanceEvent, EventType, SkillLevel } from '@/lib/types';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -123,6 +124,11 @@ function EventCard({
             {event.is_featured && <ThemedText type="small">★ Featured</ThemedText>}
           </ThemedView>
           <ThemedText type="default">{event.title}</ThemedText>
+          {kindLine(event) && (
+            <ThemedText type="small" themeColor="textSecondary">
+              {kindLine(event)}
+            </ThemedText>
+          )}
           <ThemedText type="small" themeColor="textSecondary">
             {[event.venue_name, event.city].filter(Boolean).join(' · ')}
             {event.price_text ? ` · ${event.price_text}` : ''}
@@ -149,6 +155,11 @@ export default function EventsScreen() {
   const [events, setEvents] = useState<DanceEvent[]>(SAMPLE_EVENTS);
   const [usingSampleData, setUsingSampleData] = useState(true);
   const [search, setSearch] = useState('');
+  const [typeFilter, setTypeFilter] = useState<EventType | null>(null);
+  // "All levels" events show under every level.
+  const [levelFilter, setLevelFilter] = useState<SkillLevel | null>(null);
+  const [showKindFilters, setShowKindFilters] = useState(false);
+  const activeKindFilters = (typeFilter ? 1 : 0) + (levelFilter ? 1 : 0);
   const [origin, setOrigin] = useState<Origin>({ kind: 'anywhere' });
   const [radius, setRadius] = useState<RadiusMiles>(DEFAULT_RADIUS);
   const [zipInput, setZipInput] = useState('');
@@ -245,6 +256,12 @@ export default function EventsScreen() {
       if (cutoff && new Date(e.starts_at).getTime() > cutoff) {
         return false;
       }
+      if (typeFilter && e.event_type !== typeFilter) {
+        return false;
+      }
+      if (!matchesLevel(e.skill_level, levelFilter)) {
+        return false;
+      }
       if (!q) {
         return true;
       }
@@ -252,7 +269,7 @@ export default function EventsScreen() {
         .filter(Boolean)
         .some((field) => field!.toLowerCase().includes(q));
     });
-  }, [events, search, dateFilter]);
+  }, [events, search, dateFilter, typeFilter, levelFilter]);
 
   const originCoords = origin.kind === 'anywhere' ? null : origin.coords;
 
@@ -290,7 +307,46 @@ export default function EventsScreen() {
               }
             />
           ))}
+          <Chip
+            label={activeKindFilters ? `Type & level (${activeKindFilters})` : 'Type & level'}
+            selected={showKindFilters || activeKindFilters > 0}
+            onPress={() => setShowKindFilters((v) => !v)}
+          />
         </ScrollView>
+        {showKindFilters && (
+          <>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.chipScroll}
+              contentContainerStyle={styles.chipRow}>
+              <Chip label="Any type" selected={!typeFilter} onPress={() => setTypeFilter(null)} />
+              {EVENT_TYPES.map((t) => (
+                <Chip
+                  key={t.value}
+                  label={t.label}
+                  selected={typeFilter === t.value}
+                  onPress={() => setTypeFilter(typeFilter === t.value ? null : t.value)}
+                />
+              ))}
+            </ScrollView>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.chipScroll}
+              contentContainerStyle={styles.chipRow}>
+              <Chip label="Any level" selected={!levelFilter} onPress={() => setLevelFilter(null)} />
+              {SKILL_LEVELS.filter((l) => l.value !== 'all').map((l) => (
+                <Chip
+                  key={l.value}
+                  label={l.label}
+                  selected={levelFilter === l.value}
+                  onPress={() => setLevelFilter(levelFilter === l.value ? null : l.value)}
+                />
+              ))}
+            </ScrollView>
+          </>
+        )}
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
