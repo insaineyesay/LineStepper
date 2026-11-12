@@ -115,7 +115,7 @@ confirmed running it on the real project.
 | 0009 | `images.sql` | `images` bucket, flyer/photo URL columns and guards | **Not confirmed.** #29 is merged; run before releasing to `main` |
 | 0010 | `event_type_level.sql` | Event type and skill level (PR #30) | No, PR still open |
 | 0011 | `notification_outbox.sql` | Queue for change notices and new-event alerts, plus the minute job (PR #33) | No, PR still open. Also deploy `send-notifications` (GETTING_STARTED.md) |
-| 0012 | `event_change_notices.sql` | Triggers that queue change notices for people who saved an event (PR #CHANGES) | No, PR still open. Needs 0011 |
+| 0012 | `event_change_notices.sql` | Triggers that queue change notices for people who saved an event (PR #34) | No, PR still open. Needs 0011 |
 
 The ZIP table is loaded from `supabase/data/zip_codes.csv` (instructions in
 GETTING_STARTED.md). Sample events and crews come from
@@ -158,7 +158,7 @@ GETTING_STARTED.md). Sample events and crews come from
 - #31: Add to calendar (system sheet on phones, `.ics` and Google link on the web).
 - #32: this file.
 - #33: notification outbox and sender (adds 0011 and `send-notifications`).
-- #CHANGES: change notices for saved events (adds 0012; stacked on #33).
+- #34: change notices for saved events (adds 0012; stacked on #33).
 
 ### Phase 1 work still to do (in order)
 
@@ -170,7 +170,7 @@ the PRD gap list below and may change the picks.
    repeated edits merge); `send-notifications` delivers them via Expo and
    deletes them. Chosen over the API because the database can call it only
    when there's work (Dev Discussions §14); cost is effectively zero.
-2. **Change notices for saved events (PRD F3, F9).** In PR #CHANGES. Database
+2. **Change notices for saved events (PRD F3, F9).** In PR #34. Database
    triggers on `events` queue the notice (new time, new place, cancelled, no
    longer listed, back on) for bookmarkers with a phone, skipping the
    organizer, banned accounts and blocks. Waits 2 minutes for more edits,
