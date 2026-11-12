@@ -11,7 +11,7 @@ updated" line, move items between sections, add new decisions, and fix
 anything that's become wrong. A stale line here costs the next person far more
 than it costs you to fix it now.
 
-Last updated: 2026-11-12, v0.1.0 released and live (no open PRs besides this one).
+Last updated: 2026-11-12, v0.1.0 live; Drive copy of this file posted.
 
 ---
 
@@ -35,7 +35,12 @@ organizers. It's a client project. Launch region: Hampton Roads and Richmond
 - "LineUp2Step — Terms, Privacy and Disclaimers (draft for review)", Google Doc
   `1UXKVTmi6zdon1m-vflf6sL7s9QpNu_CmQPWN2oyn5EA`
 
-All four are in the client's shared drive (`0AFEukbbjmOimUk9PVA`).
+- "LineUp2Step — Progress and shared context", Google Doc
+  `1aEoo20DdfU_yZy2nI8T7Gp6ZlMH1yYtl0XBvW8uBRIs`: a copy of this file for the
+  client. **This file is the source of truth**; refresh the Drive copy at each
+  release (see Working rules).
+
+All five are in the client's shared drive (`0AFEukbbjmOimUk9PVA`).
 
 **Phase 1 (MVP1) money model, decided by the client:**
 
@@ -165,7 +170,7 @@ GETTING_STARTED.md). Sample events and crews come from
 
 ### Open PRs
 
-- This one (PROGRESS.md: v0.1.0 is live).
+- This one (links the Drive copy of this file).
 
 ### Phase 1 work still to do (in order)
 
@@ -255,7 +260,9 @@ first, commerce much later), step-sheet and dance tracking, in-app ticketing.
   the version PR to `main` and the `develop` branch was deleted on GitHub (it
   was recreated from `main`; nothing was lost). After each release, check
   `develop` still exists and that `git log origin/develop..origin/main` is
-  empty; if not, fast-forward `develop` to `main`.
+  empty; if not, fast-forward `develop` to `main`. Then replace the Drive copy
+  of this file (Google Doc `1aEoo20DdfU_yZy2nI8T7Gp6ZlMH1yYtl0XBvW8uBRIs`) with
+  the released version.
 - **Check a PR is still open before pushing to its branch**
   (`gh pr view <n> --json state`). If it's merged, open a new PR.
 - **Every PR updates CHANGELOG.md** (Keep a Changelog, under Unreleased) **and
@@ -311,4 +318,5 @@ first, commerce much later), step-sheet and dance tracking, in-app ticketing.
 
 - 2026-11-12: Created from the build history (sessions up to #31). Same day:
   #30–#36 merged; one-PR-at-a-time rule added; v0.1.0 cut, released and
-  verified live; `develop` recreated from `main` after GitHub deleted it.
+  verified live; `develop` recreated from `main` after GitHub deleted it;
+  first copy posted to Google Drive.
