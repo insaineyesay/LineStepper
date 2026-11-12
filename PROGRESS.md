@@ -114,7 +114,7 @@ confirmed running it on the real project.
 | 0008 | `moderation.sql` | Reports, blocks, bans, removals | Yes |
 | 0009 | `images.sql` | `images` bucket, flyer/photo URL columns and guards | **Not confirmed.** #29 is merged; run before releasing to `main` |
 | 0010 | `event_type_level.sql` | Event type and skill level (PR #30) | No, PR still open |
-| 0011 | `notification_outbox.sql` | Queue for change notices and new-event alerts, plus the minute job (PR #OUTBOX) | No, PR still open. Also deploy `send-notifications` (GETTING_STARTED.md) |
+| 0011 | `notification_outbox.sql` | Queue for change notices and new-event alerts, plus the minute job (PR #33) | No, PR still open. Also deploy `send-notifications` (GETTING_STARTED.md) |
 
 The ZIP table is loaded from `supabase/data/zip_codes.csv` (instructions in
 GETTING_STARTED.md). Sample events and crews come from
@@ -156,14 +156,14 @@ GETTING_STARTED.md). Sample events and crews come from
 - #30: event type and skill level, with filters (adds 0010).
 - #31: Add to calendar (system sheet on phones, `.ics` and Google link on the web).
 - #32: this file.
-- #OUTBOX: notification outbox and sender (adds 0011 and `send-notifications`).
+- #33: notification outbox and sender (adds 0011 and `send-notifications`).
 
 ### Phase 1 work still to do (in order)
 
 These were recommended by the dev team on 2026-11-12. The client is reviewing
 the PRD gap list below and may change the picks.
 
-1. **Notification outbox and sender.** In PR #OUTBOX. `notification_outbox`
+1. **Notification outbox and sender.** In PR #33. `notification_outbox`
    holds ready-worded notices (one waiting notice per person per topic, so
    repeated edits merge); `send-notifications` delivers them via Expo and
    deletes them. Chosen over the API because the database can call it only
