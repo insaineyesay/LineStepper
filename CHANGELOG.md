@@ -78,6 +78,9 @@ Add a line under "Unreleased" in the same pull request as the change.
 - The app version is shown at the bottom of the Profile tab.
 
 ### Changed
+- PROGRESS.md: the living handoff document (what's built and live, what's
+  left, architecture rules, working rules). AGENTS.md now says to read it
+  first and update it in every PR.
 - The apps now send warnings, errors and key events to the API on Heroku,
   and read feature flags from it.
 - Internal: screens and components get data only through one data layer
