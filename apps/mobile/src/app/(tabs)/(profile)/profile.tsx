@@ -15,6 +15,7 @@ import { Button } from '@/components/button';
 import { Chip } from '@/components/chip';
 import { BlockedPeople } from '@/components/blocked-people';
 import { DeleteAccount } from '@/components/delete-account';
+import { PhotoField } from '@/components/photo-field';
 import { LegalLinks, SignInConsent } from '@/components/legal-links';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -32,6 +33,8 @@ import { listBookmarks, type BookmarkedEvent } from '@/data/bookmarks';
 import { listMyEvents } from '@/data/events';
 import { getProfile, updateProfile } from '@/data/profiles';
 import { listMetros } from '@/data/reference';
+import { removeImage, uploadImage } from '@/data/images';
+import { IMAGE_SIZES, prepareImage } from '@/lib/image-prep';
 import type { Metro, Profile, ProfileRole } from '@/lib/types';
 
 const ROLE_OPTIONS: { value: ProfileRole; label: string }[] = [
@@ -279,6 +282,29 @@ function ProfileEditor({
   const [zip, setZip] = useState('');
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [photoBusy, setPhotoBusy] = useState(false);
+
+  // The photo saves straight away; it doesn't wait for Save profile.
+  const changePhoto = async (localUri: string | null) => {
+    setPhotoBusy(true);
+    setMessage(null);
+    try {
+      if (localUri) {
+        const prepared = await prepareImage(localUri, IMAGE_SIZES.profile);
+        const { data, error } = await uploadImage({ target: 'profile' }, { full: prepared.bytes });
+        if (error) throw new Error(error.message);
+        setPhotoUrl(data.url);
+      } else {
+        const { error } = await removeImage({ target: 'profile' });
+        if (error) throw new Error(error.message);
+        setPhotoUrl(null);
+      }
+    } catch {
+      setMessage("Your photo couldn't be saved. Try again in a moment.");
+    }
+    setPhotoBusy(false);
+  };
 
   const load = useCallback(async () => {
     const [{ data: profileRow }, { data: metroRows }] = await Promise.all([
@@ -292,6 +318,7 @@ function ProfileEditor({
       setRole(profileRow.role);
       setMetroId(profileRow.home_metro_id);
       setZip(profileRow.zip ?? '');
+      setPhotoUrl(profileRow.avatar_url);
     }
     if (metroRows) {
       setMetros(metroRows);
@@ -353,6 +380,15 @@ function ProfileEditor({
         <ThemedText type="small" themeColor="textSecondary">
           Signed in as {email}
         </ThemedText>
+
+        <PhotoField
+          label="Profile photo"
+          shape="avatar"
+          uri={photoUrl}
+          busy={photoBusy}
+          onPicked={(uri) => void changePhoto(uri)}
+          onRemove={() => void changePhoto(null)}
+        />
 
         <ThemedText type="small">Display name</ThemedText>
         <TextInput

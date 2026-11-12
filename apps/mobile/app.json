@@ -45,7 +45,15 @@
           "locationWhenInUsePermission": "LineUp2Step uses your location to show line dancing events near you."
         }
       ],
-      "expo-localization"
+      "expo-localization",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "LineUp2Step uses your photos so you can add a profile photo or an event flyer.",
+          "cameraPermission": false,
+          "microphonePermission": false
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
