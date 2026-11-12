@@ -29,6 +29,10 @@ Add a line under "Unreleased" in the same pull request as the change.
   failures are retried 5 times. Android gets a separate "Event changes and new
   events" channel. Nothing writes to the queue yet (change notices and
   new-event alerts come next). Local database tests: `supabase/tests/run.sh`.
+- Add to calendar on every event page. On phones it opens the system "New
+  Event" screen, filled in, so no calendar permission is needed. On the web
+  it downloads a calendar file (Apple Calendar, Outlook) and offers a Google
+  Calendar link. Events without an end time are entered as 3 hours long.
 - Event type (class, social, workshop, competition, festival) and skill level
   (all levels, beginner, intermediate, advanced). Chosen on the event form
   (type is required for new events), shown on event pages and list cards, and
