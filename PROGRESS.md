@@ -166,7 +166,7 @@ GETTING_STARTED.md). Sample events and crews come from
 
 ### Open PRs
 
-- #A11Y: accessibility pass (app only; no migration).
+- #36: accessibility pass (app only; no migration).
 
 ### Phase 1 work still to do (in order)
 
@@ -188,7 +188,7 @@ the PRD gap list below and may change the picks.
    first publish, followers with a phone get "New event from …" after 2
    minutes (edits update it, unpublishing drops it). `followers_notified_at`
    stops re-publishing from alerting again. Respects blocks and bans.
-4. **Accessibility pass.** In PR #A11Y. Every tappable thing has a role
+4. **Accessibility pass.** In PR #36. Every tappable thing has a role
    (and selected/expanded state where it applies), every text box a label,
    page titles are headings, event cards read title first. Fixed at large
    text: the Events screen couldn't scroll (the header filled the screen),
