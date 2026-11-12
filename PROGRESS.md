@@ -11,7 +11,7 @@ updated" line, move items between sections, add new decisions, and fix
 anything that's become wrong. A stale line here costs the next person far more
 than it costs you to fix it now.
 
-Last updated: 2026-11-12, after #31 merged (only #32, this doc, open).
+Last updated: 2026-11-12, after #32 merged; #33 (notification outbox) open, #34 waiting on it.
 
 ---
 
@@ -56,7 +56,7 @@ All four are in the client's shared drive (`0AFEukbbjmOimUk9PVA`).
 | Shared code | `packages/shared` | Log events, telemetry catalog, feature flags. |
 | Database, sign-in, storage | Supabase project `foyzajjlisqbwoofbleb` | Postgres, email-code sign-in, Storage bucket `images`. |
 | Database changes | `supabase/migrations/00NN_*.sql` | Run by hand in the Supabase SQL editor, in order. |
-| Edge functions | `supabase/functions` | `send-reminders` (hourly via pg_cron), `create-checkout`, `stripe-webhook`. |
+| Edge functions | `supabase/functions` | `send-reminders` (hourly via pg_cron), `send-notifications` (the outbox; pg_cron checks every minute, calls it only when something is due), `create-checkout`, `stripe-webhook`. |
 | Old placeholder | `apps/web` | Placeholder Next.js app. Unused; the web app is `apps/mobile`. |
 
 **Hosting and live addresses:**
@@ -114,6 +114,7 @@ confirmed running it on the real project.
 | 0008 | `moderation.sql` | Reports, blocks, bans, removals | Yes |
 | 0009 | `images.sql` | `images` bucket, flyer/photo URL columns and guards | **Not confirmed.** #29 is merged; run before releasing to `main` |
 | 0010 | `event_type_level.sql` | Event type and skill level (#30) | **Not confirmed.** #30 is merged; run before releasing to `main` |
+| 0011 | `notification_outbox.sql` | Queue for change notices and new-event alerts, plus the minute job (PR #33) | No, PR still open. Also deploy `send-notifications` (GETTING_STARTED.md) |
 
 The ZIP table is loaded from `supabase/data/zip_codes.csv` (instructions in
 GETTING_STARTED.md). Sample events and crews come from
@@ -154,18 +155,21 @@ GETTING_STARTED.md). Sample events and crews come from
 
 ### Open PRs
 
-- #32: this document. Next up after it merges: the phase 1 work below, one PR
-  at a time.
+- #33: notification outbox and sender (adds 0011 and `send-notifications`).
+- #34: change notices for saved events. Opened before the one-PR rule
+  reached that session; it builds on #33, so merge #33 first, then update
+  #34 from `develop`.
 
 ### Phase 1 work still to do (in order)
 
 These were recommended by the dev team on 2026-11-12. The client is reviewing
 the PRD gap list below and may change the picks.
 
-1. **Notification outbox and sender.** One queue table plus a sender (an edge
-   function on a short pg_cron schedule, or the API) that delivers push through
-   Expo, using the existing `push_tokens` table and `send-reminders` patterns.
-   Check running costs first (invocations per month).
+1. **Notification outbox and sender.** In PR #33. `notification_outbox`
+   holds ready-worded notices (one waiting notice per person per topic, so
+   repeated edits merge); `send-notifications` delivers them via Expo and
+   deletes them. Chosen over the API because the database can call it only
+   when there's work (Dev Discussions §14); cost is effectively zero.
 2. **Change notices for saved events (PRD F3, F9).** When a published event's
    date, time or venue changes, or it's cancelled, notify everyone who
    bookmarked it, within about 5 minutes. The `events.change_alerts` flag
@@ -249,9 +253,14 @@ going"; creator verification; a web admin dashboard.
 
 - `npm run typecheck`, `npm run lint -w @linestepper/mobile`, `npm test` (all
   workspaces, then edge functions, then `scripts/*.test.mjs`).
+- **Database tests:** `supabase/tests/run.sh` runs every migration on a
+  throwaway local database and then `supabase/tests/*.test.sql`. Add a test
+  file there for each migration with rules worth checking.
+- **Edge function type check:** `npx deno check supabase/functions/<name>/index.ts`
+  (not part of `npm test`).
 - **Local Postgres for migration tests:** a scratch cluster on
-  `127.0.0.1:54329` (user `postgres`, TCP only) with stub `auth` and `storage`
-  schemas. pg_cron and pg_net aren't available locally, so 0004 errors partway;
+  `127.0.0.1:54329` (user `postgres`, TCP only) with stub `auth`, `storage`, `cron`, `net` and `vault` schemas
+  (`supabase/tests/stubs.sql`). Only 0004's two `create extension` lines fail;
   that's expected.
 - **iOS simulator:** iPhone 15 Plus with Expo Go. To test against a local API,
   run `EXPO_PUBLIC_API_URL=http://localhost:4000 npx expo start --port 8083` in
