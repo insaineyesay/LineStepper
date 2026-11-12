@@ -13,6 +13,8 @@ Add a line under "Unreleased" in the same pull request as the change.
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-11-12
+
 ### Added
 - Accessibility pass (PRD: WCAG 2.1 AA, text up to 200%). Screen readers now
   hear every button, chip and card as a button, with selected or expanded
@@ -40,8 +42,8 @@ Add a line under "Unreleased" in the same pull request as the change.
   delivers them through Expo push. pg_cron checks the queue every minute and
   calls the function only when something is due. Sent rows are deleted;
   failures are retried 5 times. Android gets a separate "Event changes and new
-  events" channel. Nothing writes to the queue yet (change notices and
-  new-event alerts come next). Local database tests: `supabase/tests/run.sh`.
+  events" channel. Change notices and new-event alerts (below) use it. Local
+  database tests: `supabase/tests/run.sh`.
 - Add to calendar on every event page. On phones it opens the system "New
   Event" screen, filled in, so no calendar permission is needed. On the web
   it downloads a calendar file (Apple Calendar, Outlook) and offers a Google
@@ -110,8 +112,8 @@ Add a line under "Unreleased" in the same pull request as the change.
   tracking.
 - "Share usage data" switch on the Profile tab. Crash reports are still
   sent when it's off.
-- The API can run on Heroku (setup in GETTING_STARTED.md). Server logs and
-  the apps' warnings, errors and key events go to Heroku's log.
+- The API runs on Heroku (setup in GETTING_STARTED.md). Server logs and the
+  apps' warnings, errors and key events go to Heroku's log.
 - The app version is shown at the bottom of the Profile tab.
 
 ### Changed

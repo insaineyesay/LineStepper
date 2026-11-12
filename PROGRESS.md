@@ -11,7 +11,7 @@ updated" line, move items between sections, add new decisions, and fix
 anything that's become wrong. A stale line here costs the next person far more
 than it costs you to fix it now.
 
-Last updated: 2026-11-12, after #35 merged; accessibility PR open.
+Last updated: 2026-11-12, cutting v0.1.0 (release/v0.1.0 into `develop`, then #37 `develop` → `main`).
 
 ---
 
@@ -119,7 +119,7 @@ confirmed running it on the real project.
 | 0008 | `moderation.sql` | Reports, blocks, bans, removals | Yes |
 | 0009 | `images.sql` | `images` bucket, flyer/photo URL columns and guards | **Not confirmed.** #29 is merged; run before releasing to `main` |
 | 0010 | `event_type_level.sql` | Event type and skill level (#30) | **Not confirmed.** #30 is merged; run before releasing to `main` |
-| 0011 | `notification_outbox.sql` | Queue for change notices and new-event alerts, plus the minute job (#33) | **Not confirmed.** #33 is merged; run it and deploy `send-notifications` (GETTING_STARTED.md) before releasing to `main` |
+| 0011 | `notification_outbox.sql` | Queue for change notices and new-event alerts, plus the minute job (#33) | **Not confirmed** (run before releasing to `main`). `send-notifications` **is deployed** and passed the secret check (2026-11-12) |
 | 0012 | `event_change_notices.sql` | Triggers that queue change notices for people who saved an event (#34) | **Not confirmed.** #34 is merged; run after 0011, before releasing to `main` |
 | 0013 | `follower_event_alerts.sql` | `events.followers_notified_at` and triggers that queue new-event alerts for followers (#35) | **Not confirmed.** #35 is merged; run after 0011 and 0012, before releasing to `main` |
 
@@ -152,7 +152,7 @@ GETTING_STARTED.md). Sample events and crews come from
   disclaimers on event and crew pages.
 - Telemetry to PostHog and Heroku logs; the Share usage data switch.
 
-### Merged to `develop`, not yet released to `main`
+### In v0.1.0: merged to `develop`, shipping to `main` with release PR #37
 
 - #28: "How LineUp2Step works" pricing card on Events and the `/faq` page.
 - #29: event flyers and profile photos (needs 0009 run). **A real upload has
@@ -163,10 +163,15 @@ GETTING_STARTED.md). Sample events and crews come from
   `send-notifications` edge function deployed).
 - #34: change notices for people who saved an event (needs 0012 run).
 - #35: new-event alerts for followers (needs 0013 run).
+- #36: accessibility pass (app only; no migration).
 
 ### Open PRs
 
-- #36: accessibility pass (app only; no migration).
+- `release/v0.1.0` → `develop`: version 0.1.0 and its release notes. Merge
+  this first; #37 then picks it up automatically.
+- #37: release, `develop` → `main`. After it merges: tag `v0.1.0` and publish
+  the notes (RELEASING.md step 5), check the deploy, and move the items above
+  to "Live in production" in the next PR.
 
 ### Phase 1 work still to do (in order)
 
@@ -188,7 +193,7 @@ the PRD gap list below and may change the picks.
    first publish, followers with a phone get "New event from …" after 2
    minutes (edits update it, unpublishing drops it). `followers_notified_at`
    stops re-publishing from alerting again. Respects blocks and bans.
-4. **Accessibility pass.** In PR #36. Every tappable thing has a role
+4. **Accessibility pass.** Done, #36. Every tappable thing has a role
    (and selected/expanded state where it applies), every text box a label,
    page titles are headings, event cards read title first. Fixed at large
    text: the Events screen couldn't scroll (the header filled the screen),
@@ -234,6 +239,9 @@ reminder times (24h and 2h); role-specific profile details and role tabs; the
 dance and song catalog (Q5 open); per-type notification settings; "see who's
 going"; creator verification; a web admin dashboard.
 
+Longer-term ideas (from the original README roadmap): merch pages (link out
+first, commerce much later), step-sheet and dance tracking, in-app ticketing.
+
 ## 5. Working rules
 
 - **Branches start from an up-to-date `develop`.** PRs go into `develop`. A
@@ -249,8 +257,10 @@ going"; creator verification; a web admin dashboard.
 - **Check a PR is still open before pushing to its branch**
   (`gh pr view <n> --json state`). If it's merged, open a new PR.
 - **Every PR updates CHANGELOG.md** (Keep a Changelog, under Unreleased) **and
-  this file.** Releases: `npm run release -- x.y.z` (RELEASING.md). Plan: 0.1.0
-  once the legal details are in, 1.0.0 after polish.
+  this file.** Releases: `npm run release -- x.y.z` (RELEASING.md). v0.1.0
+  was cut on 2026-11-12 (account deletion, report/block and the legal pages
+  are in; the legal text is still a draft). Next: 1.0.0 after polish and the
+  beta; minor versions (0.2.0, …) for feature releases before then.
 - **Don't run a formatter over whole files.** It once rewrote the Events screen
   in a different quote style and buried a real change under hundreds of lines.
   Match the existing style by hand.
@@ -298,4 +308,4 @@ going"; creator verification; a web admin dashboard.
 ## 7. Change log of this document
 
 - 2026-11-12: Created from the build history (sessions up to #31). Same day:
-  #30 and #31 merged; one-PR-at-a-time rule added.
+  #30–#36 merged; one-PR-at-a-time rule added; v0.1.0 cut.
