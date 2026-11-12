@@ -14,6 +14,10 @@ Add a line under "Unreleased" in the same pull request as the change.
 ## [Unreleased]
 
 ### Added
+- Add to calendar on every event page. On phones it opens the system "New
+  Event" screen, filled in, so no calendar permission is needed. On the web
+  it downloads a calendar file (Apple Calendar, Outlook) and offers a Google
+  Calendar link. Events without an end time are entered as 3 hours long.
 - "How LineUp2Step works" card on Events: the $0.99 app purchase covers a
   profile, finding events and connecting; each post is $0.99 (noted as free
   while paid posting is off). Links to a new FAQ page (`/faq`), also linked

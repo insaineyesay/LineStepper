@@ -45,7 +45,14 @@
           "locationWhenInUsePermission": "LineUp2Step uses your location to show line dancing events near you."
         }
       ],
-      "expo-localization"
+      "expo-localization",
+      [
+        "expo-calendar",
+        {
+          "calendarPermission": "LineUp2Step adds events you choose to your calendar.",
+          "remindersPermission": false
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
