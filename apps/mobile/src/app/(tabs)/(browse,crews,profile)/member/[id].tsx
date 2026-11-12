@@ -14,6 +14,8 @@ import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTabBarPadding } from '@/hooks/use-tab-bar-padding';
 import { useSession } from '@/lib/auth-context';
+import { useFlag } from '@/lib/flags';
+import { getPushStatusAsync, registerForPushAsync, type PushStatus } from '@/lib/push';
 import { BlockButton } from '@/components/block-button';
 import { ReportButton } from '@/components/report-button';
 import { isBackendConfigured } from '@/data/backend';
@@ -22,6 +24,19 @@ import { listUpcomingEventsByOrganizer, type UpcomingEventSummary } from '@/data
 import { countFollowers, follow, isFollowing as fetchIsFollowing, unfollow } from '@/data/follows';
 import { getMemberProfile, type MemberProfile } from '@/data/profiles';
 import type { ProfileRole } from '@/lib/types';
+
+function followNote(pushStatus: PushStatus, name: string): string {
+  switch (pushStatus) {
+    case 'granted':
+      return `We'll let you know when ${name} posts an event.`;
+    case 'denied':
+      return `Turn on notifications for LineStepper in Settings to hear when ${name} posts an event.`;
+    case 'unsupported':
+      return `Get the LineStepper app to hear when ${name} posts an event.`;
+    default:
+      return '';
+  }
+}
 
 const ROLE_LABELS: Record<ProfileRole, string> = {
   dancer: 'Dancer',
@@ -81,6 +96,12 @@ export default function MemberScreen() {
     load();
   }, [load]);
 
+  const followerAlertsFlag = useFlag('events.follower_alerts');
+  const pushFlag = useFlag('notify.push');
+  const followerAlertsOn = followerAlertsFlag && pushFlag;
+  const [pushStatus, setPushStatus] = useState<PushStatus>('undetermined');
+  const [justFollowed, setJustFollowed] = useState(false);
+
   const toggleFollow = async () => {
     if (!session || !id) {
       return;
@@ -97,6 +118,14 @@ export default function MemberScreen() {
       if (!error) {
         setIsFollowing(true);
         setFollowerCount((c) => c + 1);
+        setJustFollowed(true);
+        // Following is when new-event alerts make sense, so ask for notifications here.
+        if (followerAlertsOn) {
+          const result = await registerForPushAsync({ prompt: true });
+          setPushStatus(
+            result === 'registered' ? 'granted' : result === 'denied' ? 'denied' : await getPushStatusAsync()
+          );
+        }
       }
     }
     setFollowBusy(false);
@@ -159,6 +188,11 @@ export default function MemberScreen() {
               onPress={toggleFollow}
               disabled={followBusy}
             />
+          )}
+          {session && !isSelf && isFollowing && justFollowed && followerAlertsOn && (
+            <ThemedText type="small" themeColor="textSecondary">
+              {followNote(pushStatus, name)}
+            </ThemedText>
           )}
           {!session && (
             <ThemedText type="small" themeColor="textSecondary">

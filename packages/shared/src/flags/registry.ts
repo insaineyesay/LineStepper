@@ -11,6 +11,7 @@ export const FLAG_REGISTRY = {
   'events.core': { default: true, description: 'Post events with date, time, location, details' },
   'events.reminders': { default: true, description: 'Reminders before an event' },
   'events.change_alerts': { default: true, description: 'Alerts when a date changes or an event is cancelled' },
+  'events.follower_alerts': { default: true, description: 'Alert followers when someone they follow posts an event' },
   'events.paid_posting': { default: true, description: 'Publishing an event costs one $0.99 post credit' },
 
   // Booking & payments (built, off for MVP1)
