@@ -15,6 +15,7 @@ import { Button } from '@/components/button';
 import { Chip } from '@/components/chip';
 import { BlockedPeople } from '@/components/blocked-people';
 import { DeleteAccount } from '@/components/delete-account';
+import { PhotoField } from '@/components/photo-field';
 import { LegalLinks, SignInConsent } from '@/components/legal-links';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -32,6 +33,8 @@ import { listBookmarks, type BookmarkedEvent } from '@/data/bookmarks';
 import { listMyEvents } from '@/data/events';
 import { getProfile, updateProfile } from '@/data/profiles';
 import { listMetros } from '@/data/reference';
+import { removeImage, uploadImage } from '@/data/images';
+import { IMAGE_SIZES, prepareImage } from '@/lib/image-prep';
 import type { Metro, Profile, ProfileRole } from '@/lib/types';
 
 const ROLE_OPTIONS: { value: ProfileRole; label: string }[] = [
@@ -92,6 +95,7 @@ function SignInCard() {
       </ThemedText>
       <SignInConsent />
       <TextInput
+        accessibilityLabel="Email"
         value={email}
         onChangeText={setEmail}
         placeholder="you@example.com"
@@ -104,6 +108,7 @@ function SignInCard() {
       />
       {codeSent && (
         <TextInput
+          accessibilityLabel="Sign-in code"
           value={code}
           onChangeText={setCode}
           placeholder="Code from your email"
@@ -123,7 +128,7 @@ function SignInCard() {
       ) : codeSent ? (
         <>
           <Button label="Verify code" onPress={verifyCode} disabled={code.trim().length < 6} />
-          <Pressable onPress={() => { setCodeSent(false); setCode(''); setMessage(null); }}>
+          <Pressable accessibilityRole="button" onPress={() => { setCodeSent(false); setCode(''); setMessage(null); }}>
             <ThemedText type="small" themeColor="textSecondary">
               Use a different email
             </ThemedText>
@@ -165,11 +170,13 @@ function BookmarksCard({ userId }: { userId: string }) {
       {bookmarks.length === 0 ? (
         <ThemedText type="small" themeColor="textSecondary">
           Bookmark events from the calendar and they&apos;ll show up here. In the
-          app, you&apos;ll get a reminder about a day before each one.
+          app, you&apos;ll get a reminder about a day before each one, and a
+          notice if one changes or is cancelled.
         </ThemedText>
       ) : (
         bookmarks.map((bookmark) => (
           <Pressable
+            accessibilityRole="button"
             key={bookmark.event_id}
             onPress={() =>
               router.push({
@@ -224,7 +231,7 @@ function MyEventsCard({ userId }: { userId: string }) {
     <ThemedView type="backgroundElement" style={styles.card}>
       <ThemedText type="smallBold">My events</ThemedText>
       {paidPosting && credits !== null && (
-        <Pressable onPress={() => router.push('/credits')}>
+        <Pressable accessibilityRole="button" onPress={() => router.push('/credits')}>
           <ThemedText type="small" themeColor="textSecondary">
             {credits} {credits === 1 ? 'post' : 'posts'} left ·{' '}
             <ThemedText type="small">Buy posts</ThemedText>
@@ -238,6 +245,7 @@ function MyEventsCard({ userId }: { userId: string }) {
       ) : (
         myEvents.map((event) => (
           <Pressable
+            accessibilityRole="button"
             key={event.id}
             onPress={() =>
               router.push({ pathname: '/event/edit/[id]', params: { id: event.id } })
@@ -279,6 +287,29 @@ function ProfileEditor({
   const [zip, setZip] = useState('');
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [photoBusy, setPhotoBusy] = useState(false);
+
+  // The photo saves straight away; it doesn't wait for Save profile.
+  const changePhoto = async (localUri: string | null) => {
+    setPhotoBusy(true);
+    setMessage(null);
+    try {
+      if (localUri) {
+        const prepared = await prepareImage(localUri, IMAGE_SIZES.profile);
+        const { data, error } = await uploadImage({ target: 'profile' }, { full: prepared.bytes });
+        if (error) throw new Error(error.message);
+        setPhotoUrl(data.url);
+      } else {
+        const { error } = await removeImage({ target: 'profile' });
+        if (error) throw new Error(error.message);
+        setPhotoUrl(null);
+      }
+    } catch {
+      setMessage("Your photo couldn't be saved. Try again in a moment.");
+    }
+    setPhotoBusy(false);
+  };
 
   const load = useCallback(async () => {
     const [{ data: profileRow }, { data: metroRows }] = await Promise.all([
@@ -292,6 +323,7 @@ function ProfileEditor({
       setRole(profileRow.role);
       setMetroId(profileRow.home_metro_id);
       setZip(profileRow.zip ?? '');
+      setPhotoUrl(profileRow.avatar_url);
     }
     if (metroRows) {
       setMetros(metroRows);
@@ -354,8 +386,18 @@ function ProfileEditor({
           Signed in as {email}
         </ThemedText>
 
+        <PhotoField
+          label="Profile photo"
+          shape="avatar"
+          uri={photoUrl}
+          busy={photoBusy}
+          onPicked={(uri) => void changePhoto(uri)}
+          onRemove={() => void changePhoto(null)}
+        />
+
         <ThemedText type="small">Display name</ThemedText>
         <TextInput
+          accessibilityLabel="Display name"
           value={displayName}
           onChangeText={setDisplayName}
           placeholder="How dancers know you"
@@ -365,6 +407,7 @@ function ProfileEditor({
 
         <ThemedText type="small">Handle</ThemedText>
         <TextInput
+          accessibilityLabel="Handle"
           value={handle}
           onChangeText={setHandle}
           placeholder="your_handle"
@@ -400,6 +443,7 @@ function ProfileEditor({
 
         <ThemedText type="small">ZIP code</ThemedText>
         <TextInput
+          accessibilityLabel="ZIP code"
           value={zip}
           onChangeText={(text) => setZip(text.replace(/[^0-9]/g, '').slice(0, 5))}
           placeholder="Shows you events near home"
@@ -432,6 +476,7 @@ function ProfileEditor({
       )}
 
       <Pressable
+        accessibilityRole="button"
         onPress={() =>
           logTap('sign_out', async () => {
             // Stop reminders reaching this phone before the session goes away.

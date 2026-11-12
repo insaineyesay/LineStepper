@@ -18,6 +18,11 @@ export async function accountRoutes(app: FastifyInstance) {
       try {
         const result = await app.deps.accounts.deleteAccount(userId);
         req.logger.info(LogEvents.accountDeleted, { ...result });
+        if (!result.imagesRemoved) {
+          req.logger.error(LogEvents.accountDeleteFailed, new Error('Images left in storage after account deletion'), {
+            step: 'images',
+          });
+        }
         return reply.status(200).send({ deleted: true, ...result });
       } catch (err) {
         const error = err instanceof Error ? err : new Error(String(err));

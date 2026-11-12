@@ -151,6 +151,7 @@ export default function CrewDetailScreen() {
             )}
             {crew.owner && (
               <Pressable
+                accessibilityRole="button"
                 onPress={() =>
                   router.push({
                     pathname: '/member/[id]',
@@ -168,7 +169,7 @@ export default function CrewDetailScreen() {
           </ThemedView>
 
           {crew.merch_url && (
-            <Pressable onPress={() => Linking.openURL(crew.merch_url!)}>
+            <Pressable accessibilityRole="link" onPress={() => Linking.openURL(crew.merch_url!)}>
               <ThemedView type="backgroundSelected" style={styles.actionButton}>
                 <ThemedText type="smallBold">Shop crew merch</ThemedText>
               </ThemedView>
@@ -189,6 +190,7 @@ export default function CrewDetailScreen() {
               <ThemedText type="smallBold">✓ You&apos;re a member</ThemedText>
               {isOwner ? (
                 <Pressable
+                  accessibilityRole="button"
                   onPress={() =>
                     router.push({
                       pathname: '/crew/edit/[id]',
@@ -200,7 +202,7 @@ export default function CrewDetailScreen() {
                   </ThemedText>
                 </Pressable>
               ) : (
-                <Pressable onPress={leaveOrCancel}>
+                <Pressable accessibilityRole="button" onPress={leaveOrCancel}>
                   <ThemedText type="small" themeColor="textSecondary">
                     Leave crew
                   </ThemedText>
@@ -210,7 +212,7 @@ export default function CrewDetailScreen() {
           ) : myMembership?.status === 'pending' ? (
             <ThemedView type="backgroundElement" style={styles.card}>
               <ThemedText type="smallBold">Request pending</ThemedText>
-              <Pressable onPress={leaveOrCancel}>
+              <Pressable accessibilityRole="button" onPress={leaveOrCancel}>
                 <ThemedText type="small" themeColor="textSecondary">
                   Cancel request
                 </ThemedText>
@@ -236,6 +238,7 @@ export default function CrewDetailScreen() {
                   type="backgroundElement"
                   style={styles.memberRow}>
                   <Pressable
+                    accessibilityRole="button"
                     style={styles.memberName}
                     onPress={() =>
                       router.push({
@@ -249,7 +252,7 @@ export default function CrewDetailScreen() {
                     </ThemedText>
                   </Pressable>
                   {isOwner && member.role !== 'owner' && (
-                    <Pressable onPress={() => removeMember(member.profile_id)}>
+                    <Pressable accessibilityRole="button" onPress={() => removeMember(member.profile_id)}>
                       <ThemedText type="small" themeColor="textSecondary">
                         Remove
                       </ThemedText>
@@ -274,10 +277,10 @@ export default function CrewDetailScreen() {
                   <ThemedText type="small" style={styles.memberName}>
                     {memberName(member)}
                   </ThemedText>
-                  <Pressable onPress={() => approve(member.profile_id)}>
+                  <Pressable accessibilityRole="button" onPress={() => approve(member.profile_id)}>
                     <ThemedText type="smallBold">Approve</ThemedText>
                   </Pressable>
-                  <Pressable onPress={() => removeMember(member.profile_id)}>
+                  <Pressable accessibilityRole="button" onPress={() => removeMember(member.profile_id)}>
                     <ThemedText type="small" themeColor="textSecondary">
                       Decline
                     </ThemedText>

@@ -2,6 +2,7 @@
 // Same exports as push.ts so screens don't need platform checks.
 
 export const REMINDER_CHANNEL_ID = 'reminders';
+export const UPDATES_CHANNEL_ID = 'updates';
 
 export type PushStatus = 'granted' | 'denied' | 'undetermined' | 'unsupported';
 export type RegisterResult = 'registered' | 'denied' | 'unavailable';

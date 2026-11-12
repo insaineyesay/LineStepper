@@ -40,6 +40,11 @@ Skip this if someone has already done it for the project you're using.
    6. `0006_zip_radius_search.sql`, then load the ZIP codes (below)
    7. `0007_account_deletion.sql` (lets the API hand off crews when someone deletes their account)
    8. `0008_moderation.sql` (report, block and ban; see "Moderation" below)
+   9. `0009_images.sql` (event flyers and profile photos; see "Images" below)
+   10. `0010_event_type_level.sql` (event type and skill level; also tags the sample events)
+   11. `0011_notification_outbox.sql` (the queue for change notices and new-event alerts; see "Notification outbox" below)
+   12. `0012_event_change_notices.sql` (tells people who saved an event when it changes or is cancelled)
+   13. `0013_follower_event_alerts.sql` (tells followers when someone posts a new event)
 3. Optional: run `supabase/seed_sample_data.sql` to add sample events and
    crews.
 4. Make sign-in emails contain a code. The app signs you in with a 6-digit
@@ -90,6 +95,42 @@ To turn reminders off without deploying, an admin sets the
 Push notifications need a **development build**, not Expo Go. Android Expo
 Go can't receive them, and Expo Go can't get a token for your project. See
 section 7.
+
+### Notification outbox (change notices and new-event alerts)
+
+Notices other than reminders go through one queue,
+`public.notification_outbox`. Database triggers write ready-worded rows to
+it; every minute pg_cron checks for rows that are due and, only if there are
+some, calls the `send-notifications` edge function, which sends them through
+Expo and deletes them. Failed sends are retried 5 times (after 2, 4, 8 and 16
+minutes), then dropped. Nothing stays in the table after it's sent.
+
+Once per Supabase project, after the "Event reminders" steps above:
+
+1. Run `0011_notification_outbox.sql`. It creates the queue and the minute
+   job. It reuses the `project_url` and `reminders_cron_secret` Vault
+   secrets.
+2. Deploy the function (it reads the same `CRON_SECRET`, already set):
+   ```bash
+   npx supabase functions deploy send-notifications --no-verify-jwt --project-ref <ref>
+   ```
+3. Check it runs:
+   ```bash
+   curl -X POST https://<ref>.supabase.co/functions/v1/send-notifications -H "x-cron-secret: <the secret>"
+   ```
+   You should get back something like `{"claimed":0,"finished":0,...}`.
+
+Setting `notify.push` to off stops all push, including this queue.
+`events.change_alerts` off stops change notices for saved events (0012), and
+`events.follower_alerts` off stops new-event alerts for followers (0013).
+
+### Testing database changes locally
+
+`supabase/tests/run.sh` runs every migration on a throwaway local Postgres
+database, then the checks in `supabase/tests/*.test.sql`. The script's
+header says how to start a scratch Postgres. pg_cron, pg_net and Vault are
+stubbed (`supabase/tests/stubs.sql`), so tests can run a cron job's SQL and
+see whether it would have called a function.
 
 ### Telemetry: PostHog (analytics and error tracking)
 
@@ -313,6 +354,16 @@ You don't need all three running:
 ```sql
 update profiles set is_admin = true where id = '<your user id>';
 ```
+
+**Images.** Event flyers and profile photos are stored in Supabase Storage,
+in a public bucket called `images` that `0009_images.sql` creates. The app
+shrinks every photo before uploading (flyers 1200px wide plus a 400px
+thumbnail for lists, profile photos 400px), so each is roughly 100–250 KB.
+Uploads go through the API, which needs `SUPABASE_SERVICE_ROLE_KEY`. On the
+free plan Supabase includes 1 GB of storage and 5 GB a month of image
+downloads; real use will need the Pro plan ($25/month: 100 GB and 250 GB).
+Check **Settings → Usage** in Supabase to see where you stand. Deleting an
+account deletes that person's photo and flyers.
 
 **Legal pages.** The Terms of Service and Privacy Policy are at `/legal/terms`
 and `/legal/privacy` on the web app (for example

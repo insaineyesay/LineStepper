@@ -14,6 +14,54 @@ Add a line under "Unreleased" in the same pull request as the change.
 ## [Unreleased]
 
 ### Added
+- Accessibility pass (PRD: WCAG 2.1 AA, text up to 200%). Screen readers now
+  hear every button, chip and card as a button, with selected or expanded
+  state; text boxes have labels; page titles are headings; event cards read
+  the title first. A new check (`scripts/accessibility.test.mjs`) keeps new
+  buttons and text boxes labelled.
+- New-event alerts for followers. The first time someone publishes an
+  upcoming event, everyone who follows them gets a push alert ("New event
+  from DJ Smooth") about 2 minutes later; fixes in that time are included,
+  and unpublishing or deleting it drops the alert. Re-publishing doesn't
+  alert again. Not sent to banned accounts or across a block, or for a
+  banned organizer. Migration 0013 (adds `events.followers_notified_at`,
+  set by the database only); new `events.follower_alerts` flag. Following
+  someone now asks for notification permission and says what it's for.
+- Change notices for saved events. When a published, upcoming event gets a
+  new date, time or place, is cancelled, or stops being listed (moved back to
+  draft, deleted, or removed by a moderator), everyone who bookmarked it gets
+  a push notice within about 5 minutes; if it comes back, they're told it's
+  back on. Edits within 2 minutes merge into one notice. Not sent to the
+  organizer, banned accounts, or across a block. Migration 0012; switched by
+  the `events.change_alerts` flag. The bookmark note, Profile and the event
+  form say so, and the privacy and terms text mention it.
+- Notification outbox: one queue (`notification_outbox`, migration 0011) for
+  notices other than reminders, and a `send-notifications` edge function that
+  delivers them through Expo push. pg_cron checks the queue every minute and
+  calls the function only when something is due. Sent rows are deleted;
+  failures are retried 5 times. Android gets a separate "Event changes and new
+  events" channel. Nothing writes to the queue yet (change notices and
+  new-event alerts come next). Local database tests: `supabase/tests/run.sh`.
+- Add to calendar on every event page. On phones it opens the system "New
+  Event" screen, filled in, so no calendar permission is needed. On the web
+  it downloads a calendar file (Apple Calendar, Outlook) and offers a Google
+  Calendar link. Events without an end time are entered as 3 hours long.
+- Event type (class, social, workshop, competition, festival) and skill level
+  (all levels, beginner, intermediate, advanced). Chosen on the event form
+  (type is required for new events), shown on event pages and list cards, and
+  filterable on Events under "Type & level". An "All levels" event shows under
+  every level filter.
+- "How LineUp2Step works" card on Events: the $0.99 app purchase covers a
+  profile, finding events and connecting; each post is $0.99 (noted as free
+  while paid posting is off). Links to a new FAQ page (`/faq`), also linked
+  from the bottom of Profile. "Got it" hides the card on that device.
+- Event flyers and profile photos. Add, change or remove a flyer on the event
+  form and a photo on Profile. Photos are shrunk on the phone before upload.
+  Flyers show on the event page and as thumbnails in the Events list;
+  profile photos show on people's pages. Uploads go through the API
+  (`/images/uploads`, `/images/attach`, `DELETE /images`) into Supabase
+  Storage, and only the API can set image links. Deleting an account deletes
+  its images.
 - Terms of Service and Privacy Policy pages (`/legal/terms`, `/legal/privacy`),
   readable without signing in, linked from the sign-in card and the bottom of
   Profile. Disclaimers at the foot of every event and crew page. Draft text
@@ -67,6 +115,9 @@ Add a line under "Unreleased" in the same pull request as the change.
 - The app version is shown at the bottom of the Profile tab.
 
 ### Changed
+- PROGRESS.md: the living handoff document (what's built and live, what's
+  left, architecture rules, working rules). AGENTS.md now says to read it
+  first and update it in every PR.
 - The apps now send warnings, errors and key events to the API on Heroku,
   and read feature flags from it.
 - Internal: screens and components get data only through one data layer
@@ -78,6 +129,11 @@ Add a line under "Unreleased" in the same pull request as the change.
 - The app opens on the Events tab.
 
 ### Fixed
+- With large text, the Events screen couldn't scroll to the events (the
+  search and filters filled the screen); the heading and filters now scroll
+  with the list. "★ Featured" no longer gets pushed off event and crew cards,
+  the ZIP box grows to fit, and big page titles grow less so content keeps
+  its room.
 - Logs no longer mangle ids whose digits look like a phone or card number.
 - The tab bar no longer covers the bottom of inner screens on phones, so
   the Post event, Save and other bottom buttons can be tapped.

@@ -13,9 +13,11 @@ function useOpen() {
     logTap(`open_legal_${doc}`, () => router.push({ pathname: '/legal/[doc]', params: { doc } }));
 }
 
-/** "Terms of Service · Privacy Policy" under the version on Profile. */
+/** "Terms of Service · Privacy Policy · FAQ" under the version on Profile. */
 export function LegalLinks() {
   const open = useOpen();
+  const router = useRouter();
+  const openFaq = () => logTap('open_faq_from_profile', () => router.push('/faq'));
   return (
     <ThemedText type="small" themeColor="textSecondary" style={styles.center}>
       <ThemedText type="small" themeColor="textSecondary" style={styles.underline} onPress={() => open('terms')}>
@@ -24,6 +26,10 @@ export function LegalLinks() {
       {'  ·  '}
       <ThemedText type="small" themeColor="textSecondary" style={styles.underline} onPress={() => open('privacy')}>
         Privacy Policy
+      </ThemedText>
+      {'  ·  '}
+      <ThemedText type="small" themeColor="textSecondary" style={styles.underline} onPress={openFaq}>
+        FAQ
       </ThemedText>
     </ThemedText>
   );

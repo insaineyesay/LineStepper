@@ -1,3 +1,4 @@
+import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import {
@@ -14,7 +15,9 @@ import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTabBarPadding } from '@/hooks/use-tab-bar-padding';
 import { useSession } from '@/lib/auth-context';
 import { Disclaimer } from '@/components/legal-links';
+import { AddToCalendarButton } from '@/components/add-to-calendar-button';
 import { ReportButton } from '@/components/report-button';
+import { kindLine } from '@/lib/event-kinds';
 import { useFlag } from '@/lib/flags';
 import { getPushStatusAsync, registerForPushAsync, type PushStatus } from '@/lib/push';
 import { isBackendConfigured } from '@/data/backend';
@@ -32,15 +35,20 @@ function formatFullDate(iso: string) {
   });
 }
 
-function reminderNote(remindersOn: boolean, pushStatus: PushStatus): string {
-  if (!remindersOn) return 'Saved to your profile.';
+function reminderNote(reminders: boolean, changeAlerts: boolean, pushStatus: PushStatus): string {
+  if (!reminders && !changeAlerts) return 'Saved to your profile.';
   switch (pushStatus) {
     case 'granted':
-      return "Saved to your profile. We'll send you a reminder about a day before it starts.";
+      if (reminders && changeAlerts) {
+        return "Saved to your profile. We'll remind you about a day before, and tell you if it changes or is cancelled.";
+      }
+      return reminders
+        ? "Saved to your profile. We'll send you a reminder about a day before it starts."
+        : "Saved to your profile. We'll tell you if it changes or is cancelled.";
     case 'denied':
-      return 'Saved to your profile. Turn on notifications for LineStepper in Settings to get a reminder before it starts.';
+      return 'Saved to your profile. Turn on notifications for LineStepper in Settings to hear about reminders and changes.';
     case 'unsupported':
-      return 'Saved to your profile. Get the LineStepper app to be reminded before it starts.';
+      return 'Saved to your profile. Get the LineStepper app to be reminded before it starts and told if it changes.';
     default:
       return 'Saved to your profile.';
   }
@@ -56,8 +64,10 @@ export default function EventDetailScreen() {
   const [bookmarked, setBookmarked] = useState(false);
   const [bookmarkBusy, setBookmarkBusy] = useState(false);
   const remindersFlag = useFlag('events.reminders');
+  const changeAlertsFlag = useFlag('events.change_alerts');
   const pushFlag = useFlag('notify.push');
   const remindersOn = remindersFlag && pushFlag;
+  const changeAlertsOn = changeAlertsFlag && pushFlag;
   const [pushStatus, setPushStatus] = useState<PushStatus>('undetermined');
 
   useEffect(() => {
@@ -100,8 +110,8 @@ export default function EventDetailScreen() {
       const { error } = await addBookmark(session.user.id, event.id);
       if (!error) {
         setBookmarked(true);
-        // Bookmarking is when reminders make sense, so ask for notifications here.
-        if (remindersOn) {
+        // Bookmarking is when reminders and change notices make sense, so ask for notifications here.
+        if (remindersOn || changeAlertsOn) {
           const result = await registerForPushAsync({ prompt: true });
           setPushStatus(
             result === 'registered' ? 'granted' : result === 'denied' ? 'denied' : await getPushStatusAsync()
@@ -144,6 +154,12 @@ export default function EventDetailScreen() {
             <ThemedText type="smallBold">★ Featured event</ThemedText>
           )}
           <ThemedText type="subtitle">{event.title}</ThemedText>
+          {kindLine(event) && (
+            <ThemedText type="smallBold" themeColor="textSecondary">
+              {kindLine(event)}
+            </ThemedText>
+          )}
+          {event.flyer_url && <Flyer uri={event.flyer_url} />}
 
           <ThemedView type="backgroundElement" style={styles.card}>
             <ThemedText type="smallBold" style={styles.uppercase}>
@@ -173,6 +189,7 @@ export default function EventDetailScreen() {
               Hosted by
             </ThemedText>
             <Pressable
+              accessibilityRole="button"
               disabled={!event.organizer}
               onPress={() =>
                 event.organizer &&
@@ -185,6 +202,7 @@ export default function EventDetailScreen() {
             </Pressable>
             {event.crew && (
               <Pressable
+                accessibilityRole="button"
                 onPress={() =>
                   router.push({
                     pathname: '/crew/[id]',
@@ -199,7 +217,7 @@ export default function EventDetailScreen() {
           </ThemedView>
 
           {event.ticket_url && (
-            <Pressable onPress={() => Linking.openURL(event.ticket_url!)}>
+            <Pressable accessibilityRole="link" onPress={() => Linking.openURL(event.ticket_url!)}>
               <ThemedView type="backgroundSelected" style={styles.button}>
                 <ThemedText type="smallBold">Get tickets</ThemedText>
               </ThemedView>
@@ -207,7 +225,13 @@ export default function EventDetailScreen() {
           )}
 
           {session ? (
-            <Pressable onPress={toggleBookmark} disabled={bookmarkBusy}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={bookmarked ? 'Bookmarked' : 'Bookmark this event'}
+              aria-selected={bookmarked}
+              aria-busy={bookmarkBusy}
+              onPress={toggleBookmark}
+              disabled={bookmarkBusy}>
               <ThemedView
                 type={bookmarked ? 'backgroundSelected' : 'backgroundElement'}
                 style={styles.button}>
@@ -227,9 +251,10 @@ export default function EventDetailScreen() {
           )}
           {session && bookmarked && (
             <ThemedText type="small" themeColor="textSecondary">
-              {reminderNote(remindersOn, pushStatus)}
+              {reminderNote(remindersOn, changeAlertsOn, pushStatus)}
             </ThemedText>
           )}
+          <AddToCalendarButton event={event} />
           {session?.user.id === event.organizer_id && event.removed_at && (
             <ThemedView type="backgroundElement" style={styles.button}>
               <ThemedText type="smallBold">Removed by moderators</ThemedText>
@@ -240,6 +265,7 @@ export default function EventDetailScreen() {
           )}
           {session?.user.id === event.organizer_id && (
             <Pressable
+              accessibilityRole="button"
               onPress={() =>
                 router.push({ pathname: '/event/edit/[id]', params: { id: event.id } })
               }>
@@ -290,3 +316,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 });
+
+/** The event's flyer, full width, at its own shape (flyers are usually portrait). */
+function Flyer({ uri }: { uri: string }) {
+  const [ratio, setRatio] = useState(4 / 5);
+  return (
+    <Image
+      source={{ uri }}
+      style={{ width: '100%', aspectRatio: ratio, borderRadius: Spacing.three }}
+      contentFit="contain"
+      accessibilityLabel="Event flyer"
+      onLoad={(e) => {
+        const { width, height } = e.source;
+        if (width && height) setRatio(width / height);
+      }}
+    />
+  );
+}

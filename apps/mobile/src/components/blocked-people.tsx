@@ -40,7 +40,7 @@ export function BlockedPeople() {
           <ThemedText type="small" style={styles.name}>
             {p.displayName ?? (p.handle ? `@${p.handle}` : 'Dancer')}
           </ThemedText>
-          <Pressable onPress={() => logTap('unblock_person', () => void unblock(p.id))} hitSlop={Spacing.two}>
+          <Pressable accessibilityRole="button" onPress={() => logTap('unblock_person', () => void unblock(p.id))} hitSlop={Spacing.two}>
             <ThemedText type="smallBold">Unblock</ThemedText>
           </Pressable>
         </ThemedView>

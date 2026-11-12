@@ -45,10 +45,10 @@ const SAMPLE_CREWS: Crew[] = [
 
 function CrewCard({ crew, onPress }: { crew: Crew; onPress: () => void }) {
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => pressed && styles.pressed}>
+    <Pressable accessibilityRole="button" onPress={onPress} style={({ pressed }) => pressed && styles.pressed}>
       <ThemedView type="backgroundElement" style={styles.card}>
       <ThemedView type="backgroundElement" style={styles.cardHeader}>
-        <ThemedText type="default">{crew.name}</ThemedText>
+        <ThemedText type="default" style={styles.cardTitle}>{crew.name}</ThemedText>
         {crew.tier === 'featured' && <ThemedText type="small">★ Featured</ThemedText>}
       </ThemedView>
       {crew.description && (
@@ -143,8 +143,15 @@ const styles = StyleSheet.create({
   },
   cardHeader: {
     flexDirection: 'row',
+    // Wraps so "★ Featured" drops below the name with large text instead of
+    // being pushed off the card.
+    flexWrap: 'wrap',
+    columnGap: Spacing.two,
     justifyContent: 'space-between',
     alignItems: 'center',
+  },
+  cardTitle: {
+    flexShrink: 1,
   },
   pressed: {
     opacity: 0.7,

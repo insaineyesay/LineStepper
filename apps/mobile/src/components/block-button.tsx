@@ -21,7 +21,7 @@ export function BlockButton({ profileId, name, onBlocked }: { profileId: string;
 
   if (!confirming) {
     return (
-      <Pressable onPress={() => logTap('block_person', () => setConfirming(true))}>
+      <Pressable accessibilityRole="button" onPress={() => logTap('block_person', () => setConfirming(true))}>
         <ThemedText type="small" themeColor="textSecondary" style={styles.link}>
           Block {name}
         </ThemedText>
@@ -58,7 +58,7 @@ export function BlockButton({ profileId, name, onBlocked }: { profileId: string;
       ) : (
         <>
           <Button label="Block" logName="block_person_confirm" onPress={confirm} />
-          <Pressable onPress={() => logTap('block_person_cancel', () => setConfirming(false))}>
+          <Pressable accessibilityRole="button" onPress={() => logTap('block_person_cancel', () => setConfirming(false))}>
             <ThemedText type="small" themeColor="textSecondary" style={styles.link}>
               Cancel
             </ThemedText>

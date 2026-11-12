@@ -41,6 +41,10 @@ export const TELEMETRY_CATALOG = {
   'user.unblocked': { kind: 'analytics', description: 'Someone unblocked another person' },
   'moderation.action': { kind: 'log', description: 'An admin dismissed a report, removed content or banned someone' },
 
+  // Images
+  'image.attached': { kind: 'analytics', description: 'An event flyer or profile photo was added or replaced (data.target)' },
+  'image.removed': { kind: 'analytics', description: 'An event flyer or profile photo was removed (data.target)' },
+
   // Events and posting
   'event.published': { kind: 'analytics', description: 'An event was published (one post spent)' },
   'credits.load_failed': { kind: 'log', description: 'The post balance could not be loaded' },

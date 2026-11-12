@@ -123,7 +123,7 @@ export const TERMS: LegalDocument = {
     {
       heading: '8. Messages and notifications',
       blocks: [
-        'We send sign-in codes and, if you allow it, reminders about events you saved. When you follow an organizer or join a crew, any contact you have with them, inside or outside the app, is between you and them. We are not responsible for messages, emails or other communication between users, or between users and organizers.',
+        'We send sign-in codes and, if you allow it, reminders about events you saved, notices when one changes or is cancelled, and alerts when someone you follow posts an event. When you follow an organizer or join a crew, any contact you have with them, inside or outside the app, is between you and them. We are not responsible for messages, emails or other communication between users, or between users and organizers.',
       ],
     },
     {
@@ -180,7 +180,7 @@ export const PRIVACY: LegalDocument = {
               label: 'Location:',
               text: 'if you choose "Near me", your phone\'s location is used once to find events nearby. It\'s rounded first, and we never store it. You can search by ZIP code instead.',
             },
-            { label: 'Notifications:', text: 'if you allow reminders, a device token that lets us send them to your phone.' },
+            { label: 'Notifications:', text: 'if you allow notifications, a device token that lets us send reminders and event updates to your phone.' },
             {
               label: 'Usage and errors:',
               text: 'which screens you open and buttons you tap, and crash and error reports, tied to an anonymous account number, not your email or name. You can turn off usage data in Profile → Share usage data. Crash and error reports are always sent, because we need them to keep the app working.',

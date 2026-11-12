@@ -5,17 +5,22 @@ import { ActivityIndicator, StyleSheet, TextInput } from 'react-native';
 import { Button } from './button';
 import { Chip } from './chip';
 import { DraftNotice } from './draft-notice';
+import { PhotoField } from './photo-field';
 import { ThemedText } from './themed-text';
 import { ThemedView } from './themed-view';
 
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { fetchPostCredits, publishEvent, usePaidPosting } from '@/lib/credits';
+import { useFlag } from '@/lib/flags';
 import { useFormDraft } from '@/lib/form-draft';
 import { isZip, lookupZip } from '@/lib/location';
 import { createEvent, updateEvent, type EventInput } from '@/data/events';
+import { removeImage, uploadImage } from '@/data/images';
+import { IMAGE_SIZES, prepareImage } from '@/lib/image-prep';
+import { EVENT_TYPES, SKILL_LEVELS } from '@/lib/event-kinds';
 import { listMetros } from '@/data/reference';
-import type { DanceEvent, EventStatus, Metro } from '@/lib/types';
+import type { DanceEvent, EventStatus, Metro, EventType, SkillLevel } from '@/lib/types';
 
 interface EventFormProps {
   userId: string;
@@ -50,6 +55,8 @@ export function EventForm({ userId, existing, onSaved }: EventFormProps) {
   const [priceText, setPriceText] = useState(existing?.price_text ?? '');
   const [ticketUrl, setTicketUrl] = useState(existing?.ticket_url ?? '');
   const [status, setStatus] = useState<EventStatus>(existing?.status ?? 'draft');
+  const [eventType, setEventType] = useState<EventType | null>(existing?.event_type ?? null);
+  const [skillLevel, setSkillLevel] = useState<SkillLevel | null>(existing?.skill_level ?? 'all');
   const [metros, setMetros] = useState<Metro[]>([]);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -58,11 +65,21 @@ export function EventForm({ userId, existing, onSaved }: EventFormProps) {
   const [savedId, setSavedId] = useState<string | null>(existing?.id ?? null);
   const [savedStatus, setSavedStatus] = useState<EventStatus | null>(existing?.status ?? null);
   const [credits, setCredits] = useState<number | null>(null);
+  const changeAlertsFlag = useFlag('events.change_alerts');
+  const pushFlag = useFlag('notify.push');
+  const changeAlertsOn = changeAlertsFlag && pushFlag;
+  // The flyer is uploaded after the event is saved (it needs the event's id).
+  const [flyer, setFlyer] = useState<{ kind: 'keep' } | { kind: 'new'; uri: string } | { kind: 'remove' }>({
+    kind: 'keep',
+  });
+  const [savedFlyerUrl, setSavedFlyerUrl] = useState<string | null>(existing?.flyer_url ?? null);
+  const flyerPreview = flyer.kind === 'new' ? flyer.uri : flyer.kind === 'remove' ? null : savedFlyerUrl;
   const [needsCredits, setNeedsCredits] = useState(false);
 
   // Autosave what's typed so leaving the form doesn't lose it.
   const fields = {
     title, description, date, time, venueName, address, city, zip, metroId, priceText, ticketUrl, status,
+    eventType, skillLevel,
   };
   const [initialFields] = useState(() => fields);
   const draft = useFormDraft(`event.${existing?.id ?? 'new'}.${userId}`, fields, initialFields, (v) => {
@@ -78,6 +95,8 @@ export function EventForm({ userId, existing, onSaved }: EventFormProps) {
     setPriceText(v.priceText);
     setTicketUrl(v.ticketUrl);
     setStatus(v.status);
+    setEventType(v.eventType ?? null);
+    setSkillLevel(v.skillLevel ?? 'all');
   });
 
   useEffect(() => {
@@ -111,6 +130,10 @@ export function EventForm({ userId, existing, onSaved }: EventFormProps) {
     setMessage(null);
     if (!title.trim()) {
       setMessage('Give the event a title.');
+      return;
+    }
+    if (!eventType) {
+      setMessage('Choose what kind of event it is (class, social, workshop…).');
       return;
     }
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date.trim()) || !/^\d{1,2}:\d{2}$/.test(time.trim())) {
@@ -148,6 +171,8 @@ export function EventForm({ userId, existing, onSaved }: EventFormProps) {
       metro_id: metroId,
       price_text: priceText.trim() || null,
       ticket_url: ticketUrl.trim() || null,
+      event_type: eventType,
+      skill_level: skillLevel,
       // When this save spends a post, store the details first without
       // publishing, then publish through publishEvent() below.
       status: willSpendPost ? (savedStatus ?? 'draft') : status,
@@ -177,6 +202,15 @@ export function EventForm({ userId, existing, onSaved }: EventFormProps) {
     draft.clear();
     setSavedStatus(payload.status);
 
+    if (id && flyer.kind !== 'keep') {
+      const flyerError = await saveFlyer(id);
+      if (flyerError) {
+        setSaving(false);
+        setMessage(flyerError);
+        return;
+      }
+    }
+
     if (willSpendPost && id) {
       const result = await publishEvent(id);
       if (result === 'no_credits') {
@@ -197,6 +231,32 @@ export function EventForm({ userId, existing, onSaved }: EventFormProps) {
     if (id) onSaved(id);
   };
 
+  /** Uploads or removes the flyer; returns an error message, or null. */
+  async function saveFlyer(eventId: string): Promise<string | null> {
+    try {
+      if (flyer.kind === 'new') {
+        const [full, thumb] = await Promise.all([
+          prepareImage(flyer.uri, IMAGE_SIZES.flyer),
+          prepareImage(flyer.uri, IMAGE_SIZES.thumb),
+        ]);
+        const { data, error } = await uploadImage(
+          { target: 'event', eventId },
+          { full: full.bytes, thumb: thumb.bytes },
+        );
+        if (error) throw new Error(error.message);
+        setSavedFlyerUrl(data.url);
+      } else if (flyer.kind === 'remove') {
+        const { error } = await removeImage({ target: 'event', eventId });
+        if (error) throw new Error(error.message);
+        setSavedFlyerUrl(null);
+      }
+      setFlyer({ kind: 'keep' });
+      return null;
+    } catch {
+      return "Your event is saved, but the flyer didn't upload. Tap the button below to try again.";
+    }
+  }
+
   const inputStyle = [
     styles.input,
     { backgroundColor: theme.background, color: theme.text },
@@ -207,6 +267,7 @@ export function EventForm({ userId, existing, onSaved }: EventFormProps) {
       {draft.restored && <DraftNotice onDiscard={draft.discard} />}
       <ThemedText type="small">Event title</ThemedText>
       <TextInput
+        accessibilityLabel="Event title"
         value={title}
         onChangeText={setTitle}
         placeholder="Soul Line Saturday"
@@ -214,8 +275,23 @@ export function EventForm({ userId, existing, onSaved }: EventFormProps) {
         style={inputStyle}
       />
 
+      <ThemedText type="small">Type of event</ThemedText>
+      <ThemedView type="backgroundElement" style={styles.chipRow}>
+        {EVENT_TYPES.map((t) => (
+          <Chip key={t.value} label={t.label} selected={eventType === t.value} onPress={() => setEventType(t.value)} />
+        ))}
+      </ThemedView>
+
+      <ThemedText type="small">Skill level</ThemedText>
+      <ThemedView type="backgroundElement" style={styles.chipRow}>
+        {SKILL_LEVELS.map((l) => (
+          <Chip key={l.value} label={l.label} selected={skillLevel === l.value} onPress={() => setSkillLevel(l.value)} />
+        ))}
+      </ThemedView>
+
       <ThemedText type="small">Description</ThemedText>
       <TextInput
+        accessibilityLabel="Description"
         value={description}
         onChangeText={setDescription}
         placeholder="What should dancers know?"
@@ -225,10 +301,20 @@ export function EventForm({ userId, existing, onSaved }: EventFormProps) {
         style={[inputStyle, styles.multiline]}
       />
 
+      <PhotoField
+        label="Flyer (optional)"
+        shape="flyer"
+        uri={flyerPreview}
+        busy={saving && flyer.kind !== 'keep'}
+        onPicked={(uri) => setFlyer({ kind: 'new', uri })}
+        onRemove={() => setFlyer(savedFlyerUrl ? { kind: 'remove' } : { kind: 'keep' })}
+      />
+
       <ThemedView type="backgroundElement" style={styles.row}>
         <ThemedView type="backgroundElement" style={styles.rowItem}>
           <ThemedText type="small">Date</ThemedText>
           <TextInput
+            accessibilityLabel="Date"
             value={date}
             onChangeText={setDate}
             placeholder="2026-09-12"
@@ -240,6 +326,7 @@ export function EventForm({ userId, existing, onSaved }: EventFormProps) {
         <ThemedView type="backgroundElement" style={styles.rowItem}>
           <ThemedText type="small">Start time (24h)</ThemedText>
           <TextInput
+            accessibilityLabel="Start time (24h)"
             value={time}
             onChangeText={setTime}
             placeholder="19:00"
@@ -252,6 +339,7 @@ export function EventForm({ userId, existing, onSaved }: EventFormProps) {
 
       <ThemedText type="small">Venue</ThemedText>
       <TextInput
+        accessibilityLabel="Venue"
         value={venueName}
         onChangeText={setVenueName}
         placeholder="The Granby Ballroom"
@@ -261,6 +349,7 @@ export function EventForm({ userId, existing, onSaved }: EventFormProps) {
 
       <ThemedText type="small">Address</ThemedText>
       <TextInput
+        accessibilityLabel="Address"
         value={address}
         onChangeText={setAddress}
         placeholder="123 Main St"
@@ -270,6 +359,7 @@ export function EventForm({ userId, existing, onSaved }: EventFormProps) {
 
       <ThemedText type="small">City</ThemedText>
       <TextInput
+        accessibilityLabel="City"
         value={city}
         onChangeText={setCity}
         placeholder="Norfolk"
@@ -279,6 +369,7 @@ export function EventForm({ userId, existing, onSaved }: EventFormProps) {
 
       <ThemedText type="small">ZIP code</ThemedText>
       <TextInput
+        accessibilityLabel="ZIP code"
         value={zip}
         onChangeText={(text) => setZip(text.replace(/[^0-9]/g, '').slice(0, 5))}
         placeholder="23510"
@@ -302,6 +393,7 @@ export function EventForm({ userId, existing, onSaved }: EventFormProps) {
 
       <ThemedText type="small">Price (as text)</ThemedText>
       <TextInput
+        accessibilityLabel="Price (as text)"
         value={priceText}
         onChangeText={setPriceText}
         placeholder="$10 at the door, or Free"
@@ -311,6 +403,7 @@ export function EventForm({ userId, existing, onSaved }: EventFormProps) {
 
       <ThemedText type="small">Ticket link (optional)</ThemedText>
       <TextInput
+        accessibilityLabel="Ticket link (optional)"
         value={ticketUrl}
         onChangeText={setTicketUrl}
         placeholder="https://…"
@@ -340,6 +433,12 @@ export function EventForm({ userId, existing, onSaved }: EventFormProps) {
           />
         )}
       </ThemedView>
+      {changeAlertsOn && savedStatus === 'published' && (
+        <ThemedText type="small" themeColor="textSecondary">
+          People who saved this event get a notification if you change the date, time or
+          place, cancel it or move it back to draft.
+        </ThemedText>
+      )}
 
       {willSpendPost && credits !== null && !needsCredits && (
         <ThemedText type="small" themeColor="textSecondary">
