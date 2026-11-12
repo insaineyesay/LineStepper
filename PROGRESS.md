@@ -11,7 +11,7 @@ updated" line, move items between sections, add new decisions, and fix
 anything that's become wrong. A stale line here costs the next person far more
 than it costs you to fix it now.
 
-Last updated: 2026-11-12, change notices PR opened (#30–#33 still open).
+Last updated: 2026-11-12, after #30 merged; change notices PR open (#31–#34 open).
 
 ---
 
@@ -113,7 +113,7 @@ confirmed running it on the real project.
 | 0007 | `account_deletion.sql` | Crew hand-off before deleting an account | Yes |
 | 0008 | `moderation.sql` | Reports, blocks, bans, removals | Yes |
 | 0009 | `images.sql` | `images` bucket, flyer/photo URL columns and guards | **Not confirmed.** #29 is merged; run before releasing to `main` |
-| 0010 | `event_type_level.sql` | Event type and skill level (PR #30) | No, PR still open |
+| 0010 | `event_type_level.sql` | Event type and skill level (#30) | **Not confirmed.** #30 is merged; run before releasing to `main` |
 | 0011 | `notification_outbox.sql` | Queue for change notices and new-event alerts, plus the minute job (PR #33) | No, PR still open. Also deploy `send-notifications` (GETTING_STARTED.md) |
 | 0012 | `event_change_notices.sql` | Triggers that queue change notices for people who saved an event (PR #34) | No, PR still open. Needs 0011 |
 
@@ -151,10 +151,10 @@ GETTING_STARTED.md). Sample events and crews come from
 - #28: "How LineUp2Step works" pricing card on Events and the `/faq` page.
 - #29: event flyers and profile photos (needs 0009 run). **A real upload has
   not been tested yet.**
+- #30: event type and skill level, with filters (needs 0010 run).
 
 ### Open PRs
 
-- #30: event type and skill level, with filters (adds 0010).
 - #31: Add to calendar (system sheet on phones, `.ics` and Google link on the web).
 - #32: this file.
 - #33: notification outbox and sender (adds 0011 and `send-notifications`).
