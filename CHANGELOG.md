@@ -14,6 +14,10 @@ Add a line under "Unreleased" in the same pull request as the change.
 ## [Unreleased]
 
 ### Added
+- "How LineUp2Step works" card on Events: the $0.99 app purchase covers a
+  profile, finding events and connecting; each post is $0.99 (noted as free
+  while paid posting is off). Links to a new FAQ page (`/faq`), also linked
+  from the bottom of Profile. "Got it" hides the card on that device.
 - Event flyers and profile photos. Add, change or remove a flyer on the event
   form and a photo on Profile. Photos are shrunk on the phone before upload.
   Flyers show on the event page and as thumbnails in the Events list;
