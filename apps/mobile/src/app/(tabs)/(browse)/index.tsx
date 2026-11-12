@@ -4,6 +4,7 @@ import { FlatList, Pressable, ScrollView, StyleSheet, TextInput } from 'react-na
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/button';
+import { PricingCard } from '@/components/pricing-card';
 import { Chip } from '@/components/chip';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -334,6 +335,7 @@ export default function EventsScreen() {
             Showing sample events — connect Supabase in .env to load real data.
           </ThemedText>
         )}
+        <PricingCard />
         {session && (
           <Button
             label="+ Post an event"
