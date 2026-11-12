@@ -11,7 +11,7 @@ updated" line, move items between sections, add new decisions, and fix
 anything that's become wrong. A stale line here costs the next person far more
 than it costs you to fix it now.
 
-Last updated: 2026-11-12, after #30 merged; follower alerts PR open (#31–#35 open).
+Last updated: 2026-11-12, after #34 merged; #35 (follower alerts) open.
 
 ---
 
@@ -114,9 +114,9 @@ confirmed running it on the real project.
 | 0008 | `moderation.sql` | Reports, blocks, bans, removals | Yes |
 | 0009 | `images.sql` | `images` bucket, flyer/photo URL columns and guards | **Not confirmed.** #29 is merged; run before releasing to `main` |
 | 0010 | `event_type_level.sql` | Event type and skill level (#30) | **Not confirmed.** #30 is merged; run before releasing to `main` |
-| 0011 | `notification_outbox.sql` | Queue for change notices and new-event alerts, plus the minute job (PR #33) | No, PR still open. Also deploy `send-notifications` (GETTING_STARTED.md) |
-| 0012 | `event_change_notices.sql` | Triggers that queue change notices for people who saved an event (PR #34) | No, PR still open. Needs 0011 |
-| 0013 | `follower_event_alerts.sql` | `events.followers_notified_at` and triggers that queue new-event alerts for followers (PR #35) | No, PR still open. Needs 0011 and 0012 |
+| 0011 | `notification_outbox.sql` | Queue for change notices and new-event alerts, plus the minute job (#33) | **Not confirmed.** #33 is merged; run it and deploy `send-notifications` (GETTING_STARTED.md) before releasing to `main` |
+| 0012 | `event_change_notices.sql` | Triggers that queue change notices for people who saved an event (#34) | **Not confirmed.** #34 is merged; run after 0011, before releasing to `main` |
+| 0013 | `follower_event_alerts.sql` | `events.followers_notified_at` and triggers that queue new-event alerts for followers (PR #35) | No, PR still open. Run after 0011 and 0012 |
 
 The ZIP table is loaded from `supabase/data/zip_codes.csv` (instructions in
 GETTING_STARTED.md). Sample events and crews come from
@@ -153,14 +153,14 @@ GETTING_STARTED.md). Sample events and crews come from
 - #29: event flyers and profile photos (needs 0009 run). **A real upload has
   not been tested yet.**
 - #30: event type and skill level, with filters (needs 0010 run).
+- #31: Add to calendar (system sheet on phones, `.ics` and Google link on the web).
+- #33: notification outbox and sender (needs 0011 run, and the
+  `send-notifications` edge function deployed).
+- #34: change notices for people who saved an event (needs 0012 run).
 
 ### Open PRs
 
-- #31: Add to calendar (system sheet on phones, `.ics` and Google link on the web).
-- #32: this file.
-- #33: notification outbox and sender (adds 0011 and `send-notifications`).
-- #34: change notices for saved events (adds 0012; stacked on #33).
-- #35: new-event alerts for followers (adds 0013 and the `events.follower_alerts` flag; stacked on #34).
+- #35: new-event alerts for followers (adds 0013 and the `events.follower_alerts` flag).
 
 ### Phase 1 work still to do (in order)
 
@@ -172,7 +172,7 @@ the PRD gap list below and may change the picks.
    repeated edits merge); `send-notifications` delivers them via Expo and
    deletes them. Chosen over the API because the database can call it only
    when there's work (Dev Discussions §14); cost is effectively zero.
-2. **Change notices for saved events (PRD F3, F9).** In PR #34. Database
+2. **Change notices for saved events (PRD F3, F9).** Done, #34 (merged to `develop`). Database
    triggers on `events` queue the notice (new time, new place, cancelled, no
    longer listed, back on) for bookmarkers with a phone, skipping the
    organizer, banned accounts and blocks. Waits 2 minutes for more edits,
@@ -223,9 +223,13 @@ going"; creator verification; a web admin dashboard.
 - **Branches start from an up-to-date `develop`.** PRs go into `develop`. A
   release is a `develop` → `main` PR, opened only when the user asks.
   Heroku and Vercel deploy from `main`.
-- **When any PR merges into `develop`, merge `develop` into every other open PR
-  branch right away**, resolve conflicts, run the checks and push. No open PR
-  should sit in conflict.
+- **Only one PR open at a time.** Don't push or open the next PR until the
+  previous one has merged. Then pull `develop`, bring your branch up to date
+  with it, run the checks, push and open the PR. You can keep working locally
+  on the next piece meanwhile. (Rule from Michael, 2026-11-12, to stop
+  constant merge conflicts.)
+- **If more than one PR is ever open anyway, merge `develop` into the others
+  right after each merge**, resolve conflicts, run the checks and push.
 - **Check a PR is still open before pushing to its branch**
   (`gh pr view <n> --json state`). If it's merged, open a new PR.
 - **Every PR updates CHANGELOG.md** (Keep a Changelog, under Unreleased) **and
@@ -277,4 +281,5 @@ going"; creator verification; a web admin dashboard.
 
 ## 7. Change log of this document
 
-- 2026-11-12: Created from the build history (sessions up to #31).
+- 2026-11-12: Created from the build history (sessions up to #31). Same day:
+  #30 and #31 merged; one-PR-at-a-time rule added.

@@ -15,6 +15,7 @@ import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTabBarPadding } from '@/hooks/use-tab-bar-padding';
 import { useSession } from '@/lib/auth-context';
 import { Disclaimer } from '@/components/legal-links';
+import { AddToCalendarButton } from '@/components/add-to-calendar-button';
 import { ReportButton } from '@/components/report-button';
 import { kindLine } from '@/lib/event-kinds';
 import { useFlag } from '@/lib/flags';
@@ -245,6 +246,7 @@ export default function EventDetailScreen() {
               {reminderNote(remindersOn, changeAlertsOn, pushStatus)}
             </ThemedText>
           )}
+          <AddToCalendarButton event={event} />
           {session?.user.id === event.organizer_id && event.removed_at && (
             <ThemedView type="backgroundElement" style={styles.button}>
               <ThemedText type="smallBold">Removed by moderators</ThemedText>
