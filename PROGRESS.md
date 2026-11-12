@@ -11,7 +11,7 @@ updated" line, move items between sections, add new decisions, and fix
 anything that's become wrong. A stale line here costs the next person far more
 than it costs you to fix it now.
 
-Last updated: 2026-11-12, after #34 merged; #35 (follower alerts) open.
+Last updated: 2026-11-12, after #35 merged; accessibility PR open.
 
 ---
 
@@ -96,6 +96,11 @@ All four are in the client's shared drive (`0AFEukbbjmOimUk9PVA`).
   Business records (purchases, posts, admin actions, bans) do stay there.
 - **Every scrolling screen pads for the floating tab bar** (`useTabBarPadding()`
   or `BottomTabInset`); `scripts/tab-bar-padding.test.mjs` enforces it.
+- **Accessibility:** every `Pressable` has `accessibilityRole` and every
+  `TextInput` an `accessibilityLabel` (`scripts/accessibility.test.mjs`
+  enforces both). Use the `aria-*` props (`aria-selected`, `aria-expanded`)
+  for state: react-native-web ignores `accessibilityState`. Long screens
+  scroll as a whole, so nothing is out of reach with large text.
 
 **Heroku config vars:** `NODE_ENV=production`, `AUTH_PROVIDER=supabase`,
 `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `POSTHOG_API_KEY`,
@@ -116,7 +121,7 @@ confirmed running it on the real project.
 | 0010 | `event_type_level.sql` | Event type and skill level (#30) | **Not confirmed.** #30 is merged; run before releasing to `main` |
 | 0011 | `notification_outbox.sql` | Queue for change notices and new-event alerts, plus the minute job (#33) | **Not confirmed.** #33 is merged; run it and deploy `send-notifications` (GETTING_STARTED.md) before releasing to `main` |
 | 0012 | `event_change_notices.sql` | Triggers that queue change notices for people who saved an event (#34) | **Not confirmed.** #34 is merged; run after 0011, before releasing to `main` |
-| 0013 | `follower_event_alerts.sql` | `events.followers_notified_at` and triggers that queue new-event alerts for followers (PR #35) | No, PR still open. Run after 0011 and 0012 |
+| 0013 | `follower_event_alerts.sql` | `events.followers_notified_at` and triggers that queue new-event alerts for followers (#35) | **Not confirmed.** #35 is merged; run after 0011 and 0012, before releasing to `main` |
 
 The ZIP table is loaded from `supabase/data/zip_codes.csv` (instructions in
 GETTING_STARTED.md). Sample events and crews come from
@@ -157,34 +162,45 @@ GETTING_STARTED.md). Sample events and crews come from
 - #33: notification outbox and sender (needs 0011 run, and the
   `send-notifications` edge function deployed).
 - #34: change notices for people who saved an event (needs 0012 run).
+- #35: new-event alerts for followers (needs 0013 run).
 
 ### Open PRs
 
-- #35: new-event alerts for followers (adds 0013 and the `events.follower_alerts` flag).
+- #A11Y: accessibility pass (app only; no migration).
 
 ### Phase 1 work still to do (in order)
 
 These were recommended by the dev team on 2026-11-12. The client is reviewing
 the PRD gap list below and may change the picks.
 
-1. **Notification outbox and sender.** In PR #33. `notification_outbox`
+1. **Notification outbox and sender.** Done, #33. `notification_outbox`
    holds ready-worded notices (one waiting notice per person per topic, so
    repeated edits merge); `send-notifications` delivers them via Expo and
    deletes them. Chosen over the API because the database can call it only
    when there's work (Dev Discussions §14); cost is effectively zero.
-2. **Change notices for saved events (PRD F3, F9).** Done, #34 (merged to `develop`). Database
+2. **Change notices for saved events (PRD F3, F9).** Done, #34. Database
    triggers on `events` queue the notice (new time, new place, cancelled, no
    longer listed, back on) for bookmarkers with a phone, skipping the
    organizer, banned accounts and blocks. Waits 2 minutes for more edits,
    at most 4. Times are written in Eastern time (the whole launch region);
    revisit if the app expands west.
-3. **New-event alerts for followers (PRD F9).** In PR #35. On an event's
+3. **New-event alerts for followers (PRD F9).** Done, #35. On an event's
    first publish, followers with a phone get "New event from …" after 2
    minutes (edits update it, unpublishing drops it). `followers_notified_at`
    stops re-publishing from alerting again. Respects blocks and bans.
-4. **Accessibility pass.** The PRD targets WCAG 2.1 AA and text scaling up to
-   200% (many line dancers are older). Check text scaling, screen-reader labels
-   and contrast on the main screens, and fix what breaks.
+4. **Accessibility pass.** In PR #A11Y. Every tappable thing has a role
+   (and selected/expanded state where it applies), every text box a label,
+   page titles are headings, event cards read title first. Fixed at large
+   text: the Events screen couldn't scroll (the header filled the screen),
+   "★ Featured" was pushed off cards, the ZIP box was fixed-width. Big titles
+   grow at most 1.5×; body text has no cap. Contrast of the theme colours
+   passes AA (lowest: grey text on the "selected" grey, 4.55:1, just over
+   the 4.5 needed; don't make either lighter). Checked in the iOS
+   simulator at the AX3 and AX5 text sizes and in the browser; the signed-in
+   screens (post form, own profile) were only checked in code. Still open:
+   chips are about 28 points tall with a larger tap area, the native tab bar
+   labels don't grow (iOS shows its own large-text view on long press), and
+   nobody has used it with VoiceOver or TalkBack end to end.
 5. **Record each decision** in the Dev Discussions doc, and update this file.
 
 ### Phase 1 blockers outside the code

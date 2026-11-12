@@ -14,6 +14,11 @@ Add a line under "Unreleased" in the same pull request as the change.
 ## [Unreleased]
 
 ### Added
+- Accessibility pass (PRD: WCAG 2.1 AA, text up to 200%). Screen readers now
+  hear every button, chip and card as a button, with selected or expanded
+  state; text boxes have labels; page titles are headings; event cards read
+  the title first. A new check (`scripts/accessibility.test.mjs`) keeps new
+  buttons and text boxes labelled.
 - New-event alerts for followers. The first time someone publishes an
   upcoming event, everyone who follows them gets a push alert ("New event
   from DJ Smooth") about 2 minutes later; fixes in that time are included,
@@ -124,6 +129,11 @@ Add a line under "Unreleased" in the same pull request as the change.
 - The app opens on the Events tab.
 
 ### Fixed
+- With large text, the Events screen couldn't scroll to the events (the
+  search and filters filled the screen); the heading and filters now scroll
+  with the list. "★ Featured" no longer gets pushed off event and crew cards,
+  the ZIP box grows to fit, and big page titles grow less so content keeps
+  its room.
 - Logs no longer mangle ids whose digits look like a phone or card number.
 - The tab bar no longer covers the bottom of inner screens on phones, so
   the Post event, Save and other bottom buttons can be tapped.
