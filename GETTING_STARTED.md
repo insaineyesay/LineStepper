@@ -44,6 +44,7 @@ Skip this if someone has already done it for the project you're using.
    10. `0010_event_type_level.sql` (event type and skill level; also tags the sample events)
    11. `0011_notification_outbox.sql` (the queue for change notices and new-event alerts; see "Notification outbox" below)
    12. `0012_event_change_notices.sql` (tells people who saved an event when it changes or is cancelled)
+   13. `0013_follower_event_alerts.sql` (tells followers when someone posts a new event)
 3. Optional: run `supabase/seed_sample_data.sql` to add sample events and
    crews.
 4. Make sign-in emails contain a code. The app signs you in with a 6-digit
@@ -120,7 +121,8 @@ Once per Supabase project, after the "Event reminders" steps above:
    You should get back something like `{"claimed":0,"finished":0,...}`.
 
 Setting `notify.push` to off stops all push, including this queue.
-`events.change_alerts` off stops change notices for saved events (0012).
+`events.change_alerts` off stops change notices for saved events (0012), and
+`events.follower_alerts` off stops new-event alerts for followers (0013).
 
 ### Testing database changes locally
 

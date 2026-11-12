@@ -14,6 +14,14 @@ Add a line under "Unreleased" in the same pull request as the change.
 ## [Unreleased]
 
 ### Added
+- New-event alerts for followers. The first time someone publishes an
+  upcoming event, everyone who follows them gets a push alert ("New event
+  from DJ Smooth") about 2 minutes later; fixes in that time are included,
+  and unpublishing or deleting it drops the alert. Re-publishing doesn't
+  alert again. Not sent to banned accounts or across a block, or for a
+  banned organizer. Migration 0013 (adds `events.followers_notified_at`,
+  set by the database only); new `events.follower_alerts` flag. Following
+  someone now asks for notification permission and says what it's for.
 - Change notices for saved events. When a published, upcoming event gets a
   new date, time or place, is cancelled, or stops being listed (moved back to
   draft, deleted, or removed by a moderator), everyone who bookmarked it gets
