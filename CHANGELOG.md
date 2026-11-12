@@ -14,6 +14,14 @@ Add a line under "Unreleased" in the same pull request as the change.
 ## [Unreleased]
 
 ### Added
+- Change notices for saved events. When a published, upcoming event gets a
+  new date, time or place, is cancelled, or stops being listed (moved back to
+  draft, deleted, or removed by a moderator), everyone who bookmarked it gets
+  a push notice within about 5 minutes; if it comes back, they're told it's
+  back on. Edits within 2 minutes merge into one notice. Not sent to the
+  organizer, banned accounts, or across a block. Migration 0012; switched by
+  the `events.change_alerts` flag. The bookmark note, Profile and the event
+  form say so, and the privacy and terms text mention it.
 - Notification outbox: one queue (`notification_outbox`, migration 0011) for
   notices other than reminders, and a `send-notifications` edge function that
   delivers them through Expo push. pg_cron checks the queue every minute and

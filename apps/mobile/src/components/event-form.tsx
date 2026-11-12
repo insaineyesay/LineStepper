@@ -12,6 +12,7 @@ import { ThemedView } from './themed-view';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { fetchPostCredits, publishEvent, usePaidPosting } from '@/lib/credits';
+import { useFlag } from '@/lib/flags';
 import { useFormDraft } from '@/lib/form-draft';
 import { isZip, lookupZip } from '@/lib/location';
 import { createEvent, updateEvent, type EventInput } from '@/data/events';
@@ -64,6 +65,9 @@ export function EventForm({ userId, existing, onSaved }: EventFormProps) {
   const [savedId, setSavedId] = useState<string | null>(existing?.id ?? null);
   const [savedStatus, setSavedStatus] = useState<EventStatus | null>(existing?.status ?? null);
   const [credits, setCredits] = useState<number | null>(null);
+  const changeAlertsFlag = useFlag('events.change_alerts');
+  const pushFlag = useFlag('notify.push');
+  const changeAlertsOn = changeAlertsFlag && pushFlag;
   // The flyer is uploaded after the event is saved (it needs the event's id).
   const [flyer, setFlyer] = useState<{ kind: 'keep' } | { kind: 'new'; uri: string } | { kind: 'remove' }>({
     kind: 'keep',
@@ -419,6 +423,12 @@ export function EventForm({ userId, existing, onSaved }: EventFormProps) {
           />
         )}
       </ThemedView>
+      {changeAlertsOn && savedStatus === 'published' && (
+        <ThemedText type="small" themeColor="textSecondary">
+          People who saved this event get a notification if you change the date, time or
+          place, cancel it or move it back to draft.
+        </ThemedText>
+      )}
 
       {willSpendPost && credits !== null && !needsCredits && (
         <ThemedText type="small" themeColor="textSecondary">
