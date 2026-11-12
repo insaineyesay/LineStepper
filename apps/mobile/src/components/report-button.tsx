@@ -36,7 +36,7 @@ export function ReportButton({ targetType, targetId }: { targetType: ReportTarge
 
   if (!open) {
     return (
-      <Pressable onPress={() => logTap(`report_${targetType}`, () => setOpen(true))}>
+      <Pressable accessibilityRole="button" onPress={() => logTap(`report_${targetType}`, () => setOpen(true))}>
         <ThemedText type="small" themeColor="textSecondary" style={styles.link}>
           Report this {NOUN[targetType]}
         </ThemedText>
@@ -69,6 +69,7 @@ export function ReportButton({ targetType, targetId }: { targetType: ReportTarge
         ))}
       </ThemedView>
       <TextInput
+        accessibilityLabel="Details (optional)"
         value={details}
         onChangeText={setDetails}
         placeholder="Anything else we should know? (optional)"
@@ -87,7 +88,7 @@ export function ReportButton({ targetType, targetId }: { targetType: ReportTarge
       ) : (
         <>
           <Button label="Send report" logName={`report_${targetType}_send`} onPress={send} />
-          <Pressable onPress={() => logTap(`report_${targetType}_cancel`, () => setOpen(false))}>
+          <Pressable accessibilityRole="button" onPress={() => logTap(`report_${targetType}_cancel`, () => setOpen(false))}>
             <ThemedText type="small" themeColor="textSecondary" style={styles.link}>
               Cancel
             </ThemedText>

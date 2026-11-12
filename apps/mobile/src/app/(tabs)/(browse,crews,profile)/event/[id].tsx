@@ -189,6 +189,7 @@ export default function EventDetailScreen() {
               Hosted by
             </ThemedText>
             <Pressable
+              accessibilityRole="button"
               disabled={!event.organizer}
               onPress={() =>
                 event.organizer &&
@@ -201,6 +202,7 @@ export default function EventDetailScreen() {
             </Pressable>
             {event.crew && (
               <Pressable
+                accessibilityRole="button"
                 onPress={() =>
                   router.push({
                     pathname: '/crew/[id]',
@@ -215,7 +217,7 @@ export default function EventDetailScreen() {
           </ThemedView>
 
           {event.ticket_url && (
-            <Pressable onPress={() => Linking.openURL(event.ticket_url!)}>
+            <Pressable accessibilityRole="link" onPress={() => Linking.openURL(event.ticket_url!)}>
               <ThemedView type="backgroundSelected" style={styles.button}>
                 <ThemedText type="smallBold">Get tickets</ThemedText>
               </ThemedView>
@@ -223,7 +225,13 @@ export default function EventDetailScreen() {
           )}
 
           {session ? (
-            <Pressable onPress={toggleBookmark} disabled={bookmarkBusy}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={bookmarked ? 'Bookmarked' : 'Bookmark this event'}
+              aria-selected={bookmarked}
+              aria-busy={bookmarkBusy}
+              onPress={toggleBookmark}
+              disabled={bookmarkBusy}>
               <ThemedView
                 type={bookmarked ? 'backgroundSelected' : 'backgroundElement'}
                 style={styles.button}>
@@ -257,6 +265,7 @@ export default function EventDetailScreen() {
           )}
           {session?.user.id === event.organizer_id && (
             <Pressable
+              accessibilityRole="button"
               onPress={() =>
                 router.push({ pathname: '/event/edit/[id]', params: { id: event.id } })
               }>

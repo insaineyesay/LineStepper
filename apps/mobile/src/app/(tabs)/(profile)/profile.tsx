@@ -95,6 +95,7 @@ function SignInCard() {
       </ThemedText>
       <SignInConsent />
       <TextInput
+        accessibilityLabel="Email"
         value={email}
         onChangeText={setEmail}
         placeholder="you@example.com"
@@ -107,6 +108,7 @@ function SignInCard() {
       />
       {codeSent && (
         <TextInput
+          accessibilityLabel="Sign-in code"
           value={code}
           onChangeText={setCode}
           placeholder="Code from your email"
@@ -126,7 +128,7 @@ function SignInCard() {
       ) : codeSent ? (
         <>
           <Button label="Verify code" onPress={verifyCode} disabled={code.trim().length < 6} />
-          <Pressable onPress={() => { setCodeSent(false); setCode(''); setMessage(null); }}>
+          <Pressable accessibilityRole="button" onPress={() => { setCodeSent(false); setCode(''); setMessage(null); }}>
             <ThemedText type="small" themeColor="textSecondary">
               Use a different email
             </ThemedText>
@@ -174,6 +176,7 @@ function BookmarksCard({ userId }: { userId: string }) {
       ) : (
         bookmarks.map((bookmark) => (
           <Pressable
+            accessibilityRole="button"
             key={bookmark.event_id}
             onPress={() =>
               router.push({
@@ -228,7 +231,7 @@ function MyEventsCard({ userId }: { userId: string }) {
     <ThemedView type="backgroundElement" style={styles.card}>
       <ThemedText type="smallBold">My events</ThemedText>
       {paidPosting && credits !== null && (
-        <Pressable onPress={() => router.push('/credits')}>
+        <Pressable accessibilityRole="button" onPress={() => router.push('/credits')}>
           <ThemedText type="small" themeColor="textSecondary">
             {credits} {credits === 1 ? 'post' : 'posts'} left ·{' '}
             <ThemedText type="small">Buy posts</ThemedText>
@@ -242,6 +245,7 @@ function MyEventsCard({ userId }: { userId: string }) {
       ) : (
         myEvents.map((event) => (
           <Pressable
+            accessibilityRole="button"
             key={event.id}
             onPress={() =>
               router.push({ pathname: '/event/edit/[id]', params: { id: event.id } })
@@ -393,6 +397,7 @@ function ProfileEditor({
 
         <ThemedText type="small">Display name</ThemedText>
         <TextInput
+          accessibilityLabel="Display name"
           value={displayName}
           onChangeText={setDisplayName}
           placeholder="How dancers know you"
@@ -402,6 +407,7 @@ function ProfileEditor({
 
         <ThemedText type="small">Handle</ThemedText>
         <TextInput
+          accessibilityLabel="Handle"
           value={handle}
           onChangeText={setHandle}
           placeholder="your_handle"
@@ -437,6 +443,7 @@ function ProfileEditor({
 
         <ThemedText type="small">ZIP code</ThemedText>
         <TextInput
+          accessibilityLabel="ZIP code"
           value={zip}
           onChangeText={(text) => setZip(text.replace(/[^0-9]/g, '').slice(0, 5))}
           placeholder="Shows you events near home"
@@ -469,6 +476,7 @@ function ProfileEditor({
       )}
 
       <Pressable
+        accessibilityRole="button"
         onPress={() =>
           logTap('sign_out', async () => {
             // Stop reminders reaching this phone before the session goes away.

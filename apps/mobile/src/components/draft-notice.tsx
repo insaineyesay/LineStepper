@@ -13,7 +13,7 @@ export function DraftNotice({ onDiscard }: { onDiscard: () => void }) {
       <ThemedText type="small" style={styles.text}>
         Picked up where you left off.
       </ThemedText>
-      <Pressable onPress={() => logTap('discard_form_draft', onDiscard, 'button')} hitSlop={Spacing.two}>
+      <Pressable accessibilityRole="button" onPress={() => logTap('discard_form_draft', onDiscard, 'button')} hitSlop={Spacing.two}>
         <ThemedText type="smallBold">Start over</ThemedText>
       </Pressable>
     </ThemedView>

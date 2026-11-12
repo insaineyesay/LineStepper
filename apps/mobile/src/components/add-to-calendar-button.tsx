@@ -49,6 +49,7 @@ export function AddToCalendarButton({ event }: { event: DanceEvent }) {
       <Button label="Add to calendar" logName="add_to_calendar" onPress={() => void add()} />
       {SHOWS_GOOGLE_LINK && (
         <Pressable
+          accessibilityRole="link"
           onPress={() => logTap('add_to_google_calendar', () => void Linking.openURL(googleCalendarUrl(entry)))}
           hitSlop={Spacing.two}>
           <ThemedText type="small" themeColor="textSecondary" style={styles.link}>

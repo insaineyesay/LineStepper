@@ -38,7 +38,7 @@ export default function FaqScreen() {
                     <Pressable
                       onPress={() => logTap('faq_toggle', () => toggle(item.question))}
                       accessibilityRole="button"
-                      accessibilityState={{ expanded: isOpen }}
+                      aria-expanded={isOpen}
                       style={styles.question}>
                       <ThemedText type="smallBold" style={styles.questionText}>
                         {item.question}
