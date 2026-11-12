@@ -116,7 +116,7 @@ confirmed running it on the real project.
 | 0010 | `event_type_level.sql` | Event type and skill level (#30) | **Not confirmed.** #30 is merged; run before releasing to `main` |
 | 0011 | `notification_outbox.sql` | Queue for change notices and new-event alerts, plus the minute job (PR #33) | No, PR still open. Also deploy `send-notifications` (GETTING_STARTED.md) |
 | 0012 | `event_change_notices.sql` | Triggers that queue change notices for people who saved an event (PR #34) | No, PR still open. Needs 0011 |
-| 0013 | `follower_event_alerts.sql` | `events.followers_notified_at` and triggers that queue new-event alerts for followers (PR #FOLLOW) | No, PR still open. Needs 0011 and 0012 |
+| 0013 | `follower_event_alerts.sql` | `events.followers_notified_at` and triggers that queue new-event alerts for followers (PR #35) | No, PR still open. Needs 0011 and 0012 |
 
 The ZIP table is loaded from `supabase/data/zip_codes.csv` (instructions in
 GETTING_STARTED.md). Sample events and crews come from
@@ -160,7 +160,7 @@ GETTING_STARTED.md). Sample events and crews come from
 - #32: this file.
 - #33: notification outbox and sender (adds 0011 and `send-notifications`).
 - #34: change notices for saved events (adds 0012; stacked on #33).
-- #FOLLOW: new-event alerts for followers (adds 0013 and the `events.follower_alerts` flag; stacked on #34).
+- #35: new-event alerts for followers (adds 0013 and the `events.follower_alerts` flag; stacked on #34).
 
 ### Phase 1 work still to do (in order)
 
@@ -178,7 +178,7 @@ the PRD gap list below and may change the picks.
    organizer, banned accounts and blocks. Waits 2 minutes for more edits,
    at most 4. Times are written in Eastern time (the whole launch region);
    revisit if the app expands west.
-3. **New-event alerts for followers (PRD F9).** In PR #FOLLOW. On an event's
+3. **New-event alerts for followers (PRD F9).** In PR #35. On an event's
    first publish, followers with a phone get "New event from …" after 2
    minutes (edits update it, unpublishing drops it). `followers_notified_at`
    stops re-publishing from alerting again. Respects blocks and bans.
