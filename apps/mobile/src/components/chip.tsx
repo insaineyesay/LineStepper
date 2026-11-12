@@ -19,7 +19,12 @@ export function Chip({
   logName?: string;
 }) {
   return (
-    <Pressable onPress={() => logTap(logName ?? label, onPress, 'chip')}>
+    <Pressable
+      accessibilityRole="button"
+      aria-selected={selected}
+      // Chips are short; this makes the tap area about 44 points tall.
+      hitSlop={{ top: Spacing.two, bottom: Spacing.two }}
+      onPress={() => logTap(logName ?? label, onPress, 'chip')}>
       <ThemedView
         type={selected ? 'backgroundSelected' : 'backgroundElement'}
         style={styles.chip}>

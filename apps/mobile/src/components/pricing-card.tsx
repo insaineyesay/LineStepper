@@ -45,12 +45,12 @@ export function PricingCard() {
         {paidPosting ? '' : ' Posting is free while we test.'}
       </ThemedText>
       <ThemedView type="backgroundElement" style={styles.row}>
-        <Pressable onPress={() => logTap('open_faq_from_home', () => router.push('/faq'))} hitSlop={Spacing.two}>
+        <Pressable accessibilityRole="button" onPress={() => logTap('open_faq_from_home', () => router.push('/faq'))} hitSlop={Spacing.two}>
           <ThemedText type="smallBold" style={styles.link}>
             Read the FAQ
           </ThemedText>
         </Pressable>
-        <Pressable onPress={() => logTap('dismiss_pricing_card', dismiss)} hitSlop={Spacing.two}>
+        <Pressable accessibilityRole="button" onPress={() => logTap('dismiss_pricing_card', dismiss)} hitSlop={Spacing.two}>
           <ThemedText type="small" themeColor="textSecondary">
             Got it
           </ThemedText>

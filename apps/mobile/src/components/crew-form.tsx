@@ -120,6 +120,7 @@ export function CrewForm({ userId, existing, onSaved }: CrewFormProps) {
       {draft.restored && <DraftNotice onDiscard={draft.discard} />}
       <ThemedText type="small">Crew name</ThemedText>
       <TextInput
+        accessibilityLabel="Crew name"
         value={name}
         onChangeText={setName}
         placeholder="Richmond Smooth Steppers"
@@ -135,6 +136,7 @@ export function CrewForm({ userId, existing, onSaved }: CrewFormProps) {
 
       <ThemedText type="small">Description</ThemedText>
       <TextInput
+        accessibilityLabel="Description"
         value={description}
         onChangeText={setDescription}
         placeholder="Who you are, where and when you dance"
@@ -172,6 +174,7 @@ export function CrewForm({ userId, existing, onSaved }: CrewFormProps) {
 
       <ThemedText type="small">Merch store link (optional)</ThemedText>
       <TextInput
+        accessibilityLabel="Merch store link (optional)"
         value={merchUrl}
         onChangeText={setMerchUrl}
         placeholder="https://your-store.example.com"

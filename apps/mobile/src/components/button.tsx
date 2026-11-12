@@ -19,7 +19,14 @@ export function Button({
   disabled?: boolean;
 }) {
   return (
-    <Pressable onPress={() => logTap(logName ?? label, onPress, 'button')} disabled={disabled} style={disabled && styles.dimmed}>
+    <Pressable
+      accessibilityRole="button"
+      // Leading ✓ or ★ is decoration; don't read it out.
+      accessibilityLabel={label.replace(/^[✓★]\s*/, '')}
+      aria-disabled={Boolean(disabled)}
+      onPress={() => logTap(logName ?? label, onPress, 'button')}
+      disabled={disabled}
+      style={disabled && styles.dimmed}>
       <ThemedView type="backgroundSelected" style={styles.button}>
         <ThemedText type="smallBold">{label}</ThemedText>
       </ThemedView>

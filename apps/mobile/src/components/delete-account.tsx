@@ -39,7 +39,7 @@ export function DeleteAccount({ onDeleted }: { onDeleted: () => void }) {
 
   if (!confirming) {
     return (
-      <Pressable onPress={() => logTap('delete_account', () => setConfirming(true))}>
+      <Pressable accessibilityRole="button" onPress={() => logTap('delete_account', () => setConfirming(true))}>
         <ThemedText type="small" themeColor="textSecondary" style={styles.link}>
           Delete account
         </ThemedText>
@@ -65,7 +65,7 @@ export function DeleteAccount({ onDeleted }: { onDeleted: () => void }) {
       ) : (
         <>
           <Button label="Delete my account" logName="delete_account_confirm" onPress={confirm} />
-          <Pressable onPress={() => logTap('delete_account_cancel', () => setConfirming(false))}>
+          <Pressable accessibilityRole="button" onPress={() => logTap('delete_account_cancel', () => setConfirming(false))}>
             <ThemedText type="small" themeColor="textSecondary" style={styles.link}>
               Cancel
             </ThemedText>

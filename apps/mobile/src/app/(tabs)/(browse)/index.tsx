@@ -113,8 +113,20 @@ function EventCard({
   milesAway: number | null;
   onPress: () => void;
 }) {
+  const where = [event.venue_name, event.city].filter(Boolean).join(', ');
+  const distance = milesAway !== null ? `${milesAway < 1 ? 'under 1' : Math.round(milesAway)} miles away` : null;
+  // Screen readers hear the title first, then the details, as plain sentences.
+  const label = [event.title, formatEventDate(event.starts_at), kindLine(event), where, event.price_text, distance,
+    event.is_featured ? 'Featured' : null]
+    .filter(Boolean)
+    .join('. ');
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => pressed && styles.pressed}>
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityHint="Opens the event"
+      onPress={onPress}
+      style={({ pressed }) => pressed && styles.pressed}>
       <ThemedView type="backgroundElement" style={[styles.card, styles.cardRow]}>
         <ThemedView type="backgroundElement" style={styles.cardText}>
           <ThemedView type="backgroundElement" style={styles.cardHeader}>
@@ -276,140 +288,148 @@ export default function EventsScreen() {
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
-        <ThemedText type="subtitle" style={styles.heading}>
-          Events
-        </ThemedText>
-        <TextInput
-          value={search}
-          onChangeText={setSearch}
-          placeholder="Search by name, venue, or city"
-          placeholderTextColor={theme.textSecondary}
-          style={[
-            styles.search,
-            { backgroundColor: theme.backgroundElement, color: theme.text },
-          ]}
-        />
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.chipScroll}
-          contentContainerStyle={styles.chipRow}>
-          {DATE_FILTERS.map((filter) => (
-            <Chip
-              key={filter.key}
-              label={filter.label}
-              selected={dateFilter.key === filter.key}
-              onPress={() =>
-                setDateFilter({
-                  key: filter.key,
-                  cutoff: filter.days ? Date.now() + filter.days * DAY_MS : null,
-                })
-              }
-            />
-          ))}
-          <Chip
-            label={activeKindFilters ? `Type & level (${activeKindFilters})` : 'Type & level'}
-            selected={showKindFilters || activeKindFilters > 0}
-            onPress={() => setShowKindFilters((v) => !v)}
-          />
-        </ScrollView>
-        {showKindFilters && (
-          <>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={styles.chipScroll}
-              contentContainerStyle={styles.chipRow}>
-              <Chip label="Any type" selected={!typeFilter} onPress={() => setTypeFilter(null)} />
-              {EVENT_TYPES.map((t) => (
-                <Chip
-                  key={t.value}
-                  label={t.label}
-                  selected={typeFilter === t.value}
-                  onPress={() => setTypeFilter(typeFilter === t.value ? null : t.value)}
-                />
-              ))}
-            </ScrollView>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={styles.chipScroll}
-              contentContainerStyle={styles.chipRow}>
-              <Chip label="Any level" selected={!levelFilter} onPress={() => setLevelFilter(null)} />
-              {SKILL_LEVELS.filter((l) => l.value !== 'all').map((l) => (
-                <Chip
-                  key={l.value}
-                  label={l.label}
-                  selected={levelFilter === l.value}
-                  onPress={() => setLevelFilter(levelFilter === l.value ? null : l.value)}
-                />
-              ))}
-            </ScrollView>
-          </>
-        )}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-          style={styles.chipScroll}
-          contentContainerStyle={styles.chipRow}>
-          <Chip label="Anywhere" selected={origin.kind === 'anywhere'} onPress={chooseAnywhere} />
-          <Chip
-            label={locating ? 'Finding you…' : 'Near me'}
-            selected={origin.kind === 'me'}
-            onPress={() => void chooseNearMe()}
-          />
-          <TextInput
-            value={zipInput}
-            onChangeText={(text) => void changeZip(text)}
-            placeholder="ZIP"
-            placeholderTextColor={theme.textSecondary}
-            keyboardType="number-pad"
-            maxLength={5}
-            accessibilityLabel="ZIP code"
-            style={[
-              styles.zipInput,
-              {
-                backgroundColor: origin.kind === 'zip' ? theme.backgroundSelected : theme.backgroundElement,
-                color: theme.text,
-              },
-            ]}
-          />
-        </ScrollView>
-        {origin.kind !== 'anywhere' && (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.chipScroll}
-            contentContainerStyle={styles.chipRow}>
-            {RADIUS_OPTIONS.map((miles) => (
-              <Chip
-                key={miles}
-                label={`${miles} mi`}
-                selected={radius === miles}
-                onPress={() => setRadius(miles)}
-              />
-            ))}
-          </ScrollView>
-        )}
-        {nearMessage && (
-          <ThemedText type="small" themeColor="textSecondary">
-            {nearMessage}
-          </ThemedText>
-        )}
-        {usingSampleData && (
-          <ThemedText type="small" themeColor="textSecondary">
-            Showing sample events — connect Supabase in .env to load real data.
-          </ThemedText>
-        )}
-        <PricingCard />
-        {session && (
-          <Button
-            label="+ Post an event"
-            onPress={() => router.push('/event/new')}
-          />
-        )}
         <FlatList
+          // The heading, search and filters scroll with the list, so nothing is
+          // out of reach when the phone uses large text.
+          ListHeaderComponent={
+            <ThemedView style={styles.header}>
+              <ThemedText type="subtitle" style={styles.heading}>
+                Events
+              </ThemedText>
+              <TextInput
+                accessibilityLabel="Search events"
+                value={search}
+                onChangeText={setSearch}
+                placeholder="Search by name, venue, or city"
+                placeholderTextColor={theme.textSecondary}
+                style={[
+                  styles.search,
+                  { backgroundColor: theme.backgroundElement, color: theme.text },
+                ]}
+              />
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={styles.chipScroll}
+                contentContainerStyle={styles.chipRow}>
+                {DATE_FILTERS.map((filter) => (
+                  <Chip
+                    key={filter.key}
+                    label={filter.label}
+                    selected={dateFilter.key === filter.key}
+                    onPress={() =>
+                      setDateFilter({
+                        key: filter.key,
+                        cutoff: filter.days ? Date.now() + filter.days * DAY_MS : null,
+                      })
+                    }
+                  />
+                ))}
+                <Chip
+                  label={activeKindFilters ? `Type & level (${activeKindFilters})` : 'Type & level'}
+                  selected={showKindFilters || activeKindFilters > 0}
+                  onPress={() => setShowKindFilters((v) => !v)}
+                />
+              </ScrollView>
+              {showKindFilters && (
+                <>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    style={styles.chipScroll}
+                    contentContainerStyle={styles.chipRow}>
+                    <Chip label="Any type" selected={!typeFilter} onPress={() => setTypeFilter(null)} />
+                    {EVENT_TYPES.map((t) => (
+                      <Chip
+                        key={t.value}
+                        label={t.label}
+                        selected={typeFilter === t.value}
+                        onPress={() => setTypeFilter(typeFilter === t.value ? null : t.value)}
+                      />
+                    ))}
+                  </ScrollView>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    style={styles.chipScroll}
+                    contentContainerStyle={styles.chipRow}>
+                    <Chip label="Any level" selected={!levelFilter} onPress={() => setLevelFilter(null)} />
+                    {SKILL_LEVELS.filter((l) => l.value !== 'all').map((l) => (
+                      <Chip
+                        key={l.value}
+                        label={l.label}
+                        selected={levelFilter === l.value}
+                        onPress={() => setLevelFilter(levelFilter === l.value ? null : l.value)}
+                      />
+                    ))}
+                  </ScrollView>
+                </>
+              )}
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+                style={styles.chipScroll}
+                contentContainerStyle={styles.chipRow}>
+                <Chip label="Anywhere" selected={origin.kind === 'anywhere'} onPress={chooseAnywhere} />
+                <Chip
+                  label={locating ? 'Finding you…' : 'Near me'}
+                  selected={origin.kind === 'me'}
+                  onPress={() => void chooseNearMe()}
+                />
+                <TextInput
+                  value={zipInput}
+                  onChangeText={(text) => void changeZip(text)}
+                  placeholder="ZIP"
+                  placeholderTextColor={theme.textSecondary}
+                  keyboardType="number-pad"
+                  maxLength={5}
+                  accessibilityLabel="ZIP code"
+                  style={[
+                    styles.zipInput,
+                    {
+                      backgroundColor: origin.kind === 'zip' ? theme.backgroundSelected : theme.backgroundElement,
+                      color: theme.text,
+                    },
+                  ]}
+                />
+              </ScrollView>
+              {origin.kind !== 'anywhere' && (
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  style={styles.chipScroll}
+                  contentContainerStyle={styles.chipRow}>
+                  {RADIUS_OPTIONS.map((miles) => (
+                    <Chip
+                      key={miles}
+                      label={`${miles} mi`}
+                      selected={radius === miles}
+                      onPress={() => setRadius(miles)}
+                    />
+                  ))}
+                </ScrollView>
+              )}
+              {nearMessage && (
+                <ThemedText type="small" themeColor="textSecondary">
+                  {nearMessage}
+                </ThemedText>
+              )}
+              {usingSampleData && (
+                <ThemedText type="small" themeColor="textSecondary">
+                  Showing sample events — connect Supabase in .env to load real data.
+                </ThemedText>
+              )}
+              <PricingCard />
+              {session && (
+                <Button
+                  label="+ Post an event"
+                  onPress={() => router.push('/event/new')}
+                />
+              )}
+            </ThemedView>
+          }
+          keyboardShouldPersistTaps="handled"
           data={visibleEvents}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
@@ -452,6 +472,10 @@ const styles = StyleSheet.create({
     paddingTop: TabRootTopInset,
     gap: Spacing.three,
   },
+  header: {
+    gap: Spacing.three,
+    paddingBottom: Spacing.three,
+  },
   heading: {
     marginBottom: Spacing.one,
   },
@@ -471,7 +495,8 @@ const styles = StyleSheet.create({
   },
   // Sized and shaped like a chip so it sits in the same row.
   zipInput: {
-    width: 72,
+    // minWidth, not width, so the ZIP still fits with large text sizes.
+    minWidth: 72,
     borderRadius: Spacing.three,
     paddingHorizontal: Spacing.two,
     paddingVertical: Spacing.one,
@@ -505,10 +530,15 @@ const styles = StyleSheet.create({
   },
   cardHeader: {
     flexDirection: 'row',
+    // Wraps so "★ Featured" drops below the name with large text instead of
+    // being pushed off the card.
+    flexWrap: 'wrap',
+    columnGap: Spacing.two,
     justifyContent: 'space-between',
     alignItems: 'center',
   },
   cardDate: {
+    flexShrink: 1,
     textTransform: 'uppercase',
   },
   pressed: {

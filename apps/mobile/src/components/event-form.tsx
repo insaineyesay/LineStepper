@@ -267,6 +267,7 @@ export function EventForm({ userId, existing, onSaved }: EventFormProps) {
       {draft.restored && <DraftNotice onDiscard={draft.discard} />}
       <ThemedText type="small">Event title</ThemedText>
       <TextInput
+        accessibilityLabel="Event title"
         value={title}
         onChangeText={setTitle}
         placeholder="Soul Line Saturday"
@@ -290,6 +291,7 @@ export function EventForm({ userId, existing, onSaved }: EventFormProps) {
 
       <ThemedText type="small">Description</ThemedText>
       <TextInput
+        accessibilityLabel="Description"
         value={description}
         onChangeText={setDescription}
         placeholder="What should dancers know?"
@@ -312,6 +314,7 @@ export function EventForm({ userId, existing, onSaved }: EventFormProps) {
         <ThemedView type="backgroundElement" style={styles.rowItem}>
           <ThemedText type="small">Date</ThemedText>
           <TextInput
+            accessibilityLabel="Date"
             value={date}
             onChangeText={setDate}
             placeholder="2026-09-12"
@@ -323,6 +326,7 @@ export function EventForm({ userId, existing, onSaved }: EventFormProps) {
         <ThemedView type="backgroundElement" style={styles.rowItem}>
           <ThemedText type="small">Start time (24h)</ThemedText>
           <TextInput
+            accessibilityLabel="Start time (24h)"
             value={time}
             onChangeText={setTime}
             placeholder="19:00"
@@ -335,6 +339,7 @@ export function EventForm({ userId, existing, onSaved }: EventFormProps) {
 
       <ThemedText type="small">Venue</ThemedText>
       <TextInput
+        accessibilityLabel="Venue"
         value={venueName}
         onChangeText={setVenueName}
         placeholder="The Granby Ballroom"
@@ -344,6 +349,7 @@ export function EventForm({ userId, existing, onSaved }: EventFormProps) {
 
       <ThemedText type="small">Address</ThemedText>
       <TextInput
+        accessibilityLabel="Address"
         value={address}
         onChangeText={setAddress}
         placeholder="123 Main St"
@@ -353,6 +359,7 @@ export function EventForm({ userId, existing, onSaved }: EventFormProps) {
 
       <ThemedText type="small">City</ThemedText>
       <TextInput
+        accessibilityLabel="City"
         value={city}
         onChangeText={setCity}
         placeholder="Norfolk"
@@ -362,6 +369,7 @@ export function EventForm({ userId, existing, onSaved }: EventFormProps) {
 
       <ThemedText type="small">ZIP code</ThemedText>
       <TextInput
+        accessibilityLabel="ZIP code"
         value={zip}
         onChangeText={(text) => setZip(text.replace(/[^0-9]/g, '').slice(0, 5))}
         placeholder="23510"
@@ -385,6 +393,7 @@ export function EventForm({ userId, existing, onSaved }: EventFormProps) {
 
       <ThemedText type="small">Price (as text)</ThemedText>
       <TextInput
+        accessibilityLabel="Price (as text)"
         value={priceText}
         onChangeText={setPriceText}
         placeholder="$10 at the door, or Free"
@@ -394,6 +403,7 @@ export function EventForm({ userId, existing, onSaved }: EventFormProps) {
 
       <ThemedText type="small">Ticket link (optional)</ThemedText>
       <TextInput
+        accessibilityLabel="Ticket link (optional)"
         value={ticketUrl}
         onChangeText={setTicketUrl}
         placeholder="https://…"

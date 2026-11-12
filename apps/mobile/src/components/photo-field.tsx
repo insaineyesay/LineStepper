@@ -52,11 +52,11 @@ export function PhotoField({
           )}
         </ThemedView>
         <ThemedView type="backgroundElement" style={styles.actions}>
-          <Pressable onPress={() => logTap(`photo_${shape}_choose`, () => void choose())} disabled={busy} hitSlop={Spacing.two}>
+          <Pressable accessibilityRole="button" onPress={() => logTap(`photo_${shape}_choose`, () => void choose())} disabled={busy} hitSlop={Spacing.two}>
             <ThemedText type="smallBold">{uri ? 'Change photo' : 'Add photo'}</ThemedText>
           </Pressable>
           {uri && (
-            <Pressable onPress={() => logTap(`photo_${shape}_remove`, onRemove)} disabled={busy} hitSlop={Spacing.two}>
+            <Pressable accessibilityRole="button" onPress={() => logTap(`photo_${shape}_remove`, onRemove)} disabled={busy} hitSlop={Spacing.two}>
               <ThemedText type="small" themeColor="textSecondary">
                 Remove
               </ThemedText>

@@ -13,6 +13,11 @@ export function ThemedText({ style, type = 'default', themeColor, ...rest }: The
 
   return (
     <Text
+      // Titles are headings, so screen-reader users can jump between them.
+      accessibilityRole={type === 'title' || type === 'subtitle' ? 'header' : undefined}
+      // Body text grows with the phone's text size without limit. Big
+      // headings are already large, so they grow less and leave room for content.
+      maxFontSizeMultiplier={type === 'title' ? 1.5 : type === 'subtitle' ? 1.75 : undefined}
       style={[
         { color: theme[themeColor ?? 'text'] },
         type === 'default' && styles.default,

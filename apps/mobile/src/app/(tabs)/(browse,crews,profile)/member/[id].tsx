@@ -174,6 +174,7 @@ export default function MemberScreen() {
                 (link) =>
                   link.crews && (
                     <Pressable
+                      accessibilityRole="button"
                       key={link.crew_id}
                       onPress={() =>
                         router.push({
@@ -193,6 +194,7 @@ export default function MemberScreen() {
               <ThemedText type="smallBold">Upcoming events</ThemedText>
               {events.map((event) => (
                 <Pressable
+                  accessibilityRole="button"
                   key={event.id}
                   onPress={() =>
                     router.push({

@@ -104,7 +104,7 @@ export default function ModerationScreen() {
                   {KIND[r.targetType]} · {REASON_LABEL[r.reason]}
                   {r.openOnTarget > 1 ? ` · ${r.openOnTarget} reports` : ''}
                 </ThemedText>
-                <Pressable onPress={() => logTap('moderation_open_target', () => open(r))}>
+                <Pressable accessibilityRole="button" onPress={() => logTap('moderation_open_target', () => open(r))}>
                   <ThemedText type="smallBold">{r.targetLabel ?? '(no longer exists)'}</ThemedText>
                 </Pressable>
                 {r.details && <ThemedText type="small">“{r.details}”</ThemedText>}
