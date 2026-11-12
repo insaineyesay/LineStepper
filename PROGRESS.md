@@ -11,7 +11,7 @@ updated" line, move items between sections, add new decisions, and fix
 anything that's become wrong. A stale line here costs the next person far more
 than it costs you to fix it now.
 
-Last updated: 2026-11-12, cutting v0.1.0 (release/v0.1.0 into `develop`, then #37 `develop` → `main`).
+Last updated: 2026-11-12, v0.1.0 released and live (no open PRs besides this one).
 
 ---
 
@@ -109,19 +109,19 @@ All four are in the client's shared drive (`0AFEukbbjmOimUk9PVA`).
 
 ## 3. Migrations: what's in the repo and what's live
 
-Run each one in the Supabase SQL editor, in order. "Live" means the user has
-confirmed running it on the real project.
+Run each one in the Supabase SQL editor, in order. "Live" means it's confirmed
+on the real project (by the user, or checked from outside after v0.1.0).
 
 | # | File | What it does | Live? |
 |---|---|---|---|
 | 0001–0006 | initial schema, crews, flags/admins, reminders, post credits, ZIP radius search | Core tables and rules | Yes |
 | 0007 | `account_deletion.sql` | Crew hand-off before deleting an account | Yes |
 | 0008 | `moderation.sql` | Reports, blocks, bans, removals | Yes |
-| 0009 | `images.sql` | `images` bucket, flyer/photo URL columns and guards | **Not confirmed.** #29 is merged; run before releasing to `main` |
-| 0010 | `event_type_level.sql` | Event type and skill level (#30) | **Not confirmed.** #30 is merged; run before releasing to `main` |
-| 0011 | `notification_outbox.sql` | Queue for change notices and new-event alerts, plus the minute job (#33) | **Not confirmed** (run before releasing to `main`). `send-notifications` **is deployed** and passed the secret check (2026-11-12) |
-| 0012 | `event_change_notices.sql` | Triggers that queue change notices for people who saved an event (#34) | **Not confirmed.** #34 is merged; run after 0011, before releasing to `main` |
-| 0013 | `follower_event_alerts.sql` | `events.followers_notified_at` and triggers that queue new-event alerts for followers (#35) | **Not confirmed.** #35 is merged; run after 0011 and 0012, before releasing to `main` |
+| 0009 | `images.sql` | `images` bucket, flyer/photo URL columns and guards | Yes |
+| 0010 | `event_type_level.sql` | Event type and skill level (#30) | Yes |
+| 0011 | `notification_outbox.sql` | Queue for change notices and new-event alerts, plus the minute job (#33) | Yes. `send-notifications` is deployed and passed the secret check (2026-11-12) |
+| 0012 | `event_change_notices.sql` | Triggers that queue change notices for people who saved an event (#34) | Yes (triggers can't be seen from outside; 0013, which follows it, is live) |
+| 0013 | `follower_event_alerts.sql` | `events.followers_notified_at` and triggers that queue new-event alerts for followers (#35) | Yes |
 
 The ZIP table is loaded from `supabase/data/zip_codes.csv` (instructions in
 GETTING_STARTED.md). Sample events and crews come from
@@ -151,27 +151,21 @@ GETTING_STARTED.md). Sample events and crews come from
 - Legal pages (draft, with `[placeholders]`), the sign-in consent line,
   disclaimers on event and crew pages.
 - Telemetry to PostHog and Heroku logs; the Share usage data switch.
+- **v0.1.0 (2026-11-12) added:** the pricing card and `/faq` (#28); event
+  flyers and profile photos (#29; **a real upload hasn't been tested yet**);
+  event type and skill level with filters (#30); Add to calendar (#31);
+  the notification outbox (#33), change notices for saved events (#34) and
+  new-event alerts for followers (#35), which need store builds to test on
+  a real phone; the accessibility pass (#36).
+  [Release notes](https://github.com/insaineyesay/LineStepper/releases/tag/v0.1.0).
 
-### In v0.1.0: merged to `develop`, shipping to `main` with release PR #37
+### Merged to `develop`, not yet released
 
-- #28: "How LineUp2Step works" pricing card on Events and the `/faq` page.
-- #29: event flyers and profile photos (needs 0009 run). **A real upload has
-  not been tested yet.**
-- #30: event type and skill level, with filters (needs 0010 run).
-- #31: Add to calendar (system sheet on phones, `.ics` and Google link on the web).
-- #33: notification outbox and sender (needs 0011 run, and the
-  `send-notifications` edge function deployed).
-- #34: change notices for people who saved an event (needs 0012 run).
-- #35: new-event alerts for followers (needs 0013 run).
-- #36: accessibility pass (app only; no migration).
+- Nothing yet (v0.1.0 shipped everything).
 
 ### Open PRs
 
-- `release/v0.1.0` → `develop`: version 0.1.0 and its release notes. Merge
-  this first; #37 then picks it up automatically.
-- #37: release, `develop` → `main`. After it merges: tag `v0.1.0` and publish
-  the notes (RELEASING.md step 5), check the deploy, and move the items above
-  to "Live in production" in the next PR.
+- This one (PROGRESS.md: v0.1.0 is live).
 
 ### Phase 1 work still to do (in order)
 
@@ -193,7 +187,7 @@ the PRD gap list below and may change the picks.
    first publish, followers with a phone get "New event from …" after 2
    minutes (edits update it, unpublishing drops it). `followers_notified_at`
    stops re-publishing from alerting again. Respects blocks and bans.
-4. **Accessibility pass.** Done, #36. Every tappable thing has a role
+4. **Accessibility pass.** Done, #36 (live in v0.1.0). Every tappable thing has a role
    (and selected/expanded state where it applies), every text box a label,
    page titles are headings, event cards read title first. Fixed at large
    text: the Events screen couldn't scroll (the header filled the screen),
@@ -254,6 +248,14 @@ first, commerce much later), step-sheet and dance tracking, in-app ticketing.
   constant merge conflicts.)
 - **If more than one PR is ever open anyway, merge `develop` into the others
   right after each merge**, resolve conflicts, run the checks and push.
+- **Releases:** merge every PR with **"Create a merge commit"**, never
+  "Rebase and merge" or "Squash and merge" (they duplicate history and make
+  every later release conflict). **Don't use GitHub's stacked-PR "Rebase
+  stack" button** or stack the release PRs: during v0.1.0 the stack retargeted
+  the version PR to `main` and the `develop` branch was deleted on GitHub (it
+  was recreated from `main`; nothing was lost). After each release, check
+  `develop` still exists and that `git log origin/develop..origin/main` is
+  empty; if not, fast-forward `develop` to `main`.
 - **Check a PR is still open before pushing to its branch**
   (`gh pr view <n> --json state`). If it's merged, open a new PR.
 - **Every PR updates CHANGELOG.md** (Keep a Changelog, under Unreleased) **and
@@ -308,4 +310,5 @@ first, commerce much later), step-sheet and dance tracking, in-app ticketing.
 ## 7. Change log of this document
 
 - 2026-11-12: Created from the build history (sessions up to #31). Same day:
-  #30–#36 merged; one-PR-at-a-time rule added; v0.1.0 cut.
+  #30–#36 merged; one-PR-at-a-time rule added; v0.1.0 cut, released and
+  verified live; `develop` recreated from `main` after GitHub deleted it.
