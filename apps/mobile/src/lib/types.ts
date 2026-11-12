@@ -22,6 +22,9 @@ export interface Metro {
   lng: number | null;
 }
 
+export type EventType = 'class' | 'social' | 'workshop' | 'competition' | 'festival';
+export type SkillLevel = 'beginner' | 'intermediate' | 'advanced' | 'all';
+
 export interface Profile {
   id: string;
   handle: string | null;
@@ -71,6 +74,9 @@ export interface DanceEvent {
   organizer_id: string;
   crew_id: string | null;
   status: EventStatus;
+  /** Migration 0010; null on older events. */
+  event_type?: EventType | null;
+  skill_level?: SkillLevel | null;
   is_featured: boolean;
   price_text: string | null;
   ticket_url: string | null;
