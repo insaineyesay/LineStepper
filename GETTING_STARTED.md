@@ -41,6 +41,7 @@ Skip this if someone has already done it for the project you're using.
    7. `0007_account_deletion.sql` (lets the API hand off crews when someone deletes their account)
    8. `0008_moderation.sql` (report, block and ban; see "Moderation" below)
    9. `0009_images.sql` (event flyers and profile photos; see "Images" below)
+   10. `0011_notification_outbox.sql` (the queue for change notices and new-event alerts; see "Notification outbox" below)
 3. Optional: run `supabase/seed_sample_data.sql` to add sample events and
    crews.
 4. Make sign-in emails contain a code. The app signs you in with a 6-digit
@@ -91,6 +92,40 @@ To turn reminders off without deploying, an admin sets the
 Push notifications need a **development build**, not Expo Go. Android Expo
 Go can't receive them, and Expo Go can't get a token for your project. See
 section 7.
+
+### Notification outbox (change notices and new-event alerts)
+
+Notices other than reminders go through one queue,
+`public.notification_outbox`. Database triggers write ready-worded rows to
+it; every minute pg_cron checks for rows that are due and, only if there are
+some, calls the `send-notifications` edge function, which sends them through
+Expo and deletes them. Failed sends are retried 5 times (after 2, 4, 8 and 16
+minutes), then dropped. Nothing stays in the table after it's sent.
+
+Once per Supabase project, after the "Event reminders" steps above:
+
+1. Run `0011_notification_outbox.sql`. It creates the queue and the minute
+   job. It reuses the `project_url` and `reminders_cron_secret` Vault
+   secrets.
+2. Deploy the function (it reads the same `CRON_SECRET`, already set):
+   ```bash
+   npx supabase functions deploy send-notifications --no-verify-jwt --project-ref <ref>
+   ```
+3. Check it runs:
+   ```bash
+   curl -X POST https://<ref>.supabase.co/functions/v1/send-notifications -H "x-cron-secret: <the secret>"
+   ```
+   You should get back something like `{"claimed":0,"finished":0,...}`.
+
+Setting `notify.push` to off stops all push, including this queue.
+
+### Testing database changes locally
+
+`supabase/tests/run.sh` runs every migration on a throwaway local Postgres
+database, then the checks in `supabase/tests/*.test.sql`. The script's
+header says how to start a scratch Postgres. pg_cron, pg_net and Vault are
+stubbed (`supabase/tests/stubs.sql`), so tests can run a cron job's SQL and
+see whether it would have called a function.
 
 ### Telemetry: PostHog (analytics and error tracking)
 

@@ -13,11 +13,14 @@ import { registerPushToken, removePushToken } from '@/data/push-tokens';
 import { logger } from './logger';
 
 /**
- * Push notifications for event reminders. The server side is
- * supabase/functions/send-reminders; it uses the same channel id.
+ * Push notifications. Reminders come from supabase/functions/send-reminders;
+ * change notices and new-event alerts from supabase/functions/send-notifications.
+ * Each uses its own Android channel (same ids on the server), so people can
+ * mute one kind in Android settings and keep the other.
  * Web has no push (see push.web.ts).
  */
 export const REMINDER_CHANNEL_ID = 'reminders';
+export const UPDATES_CHANNEL_ID = 'updates';
 
 export type PushStatus = 'granted' | 'denied' | 'undetermined' | 'unsupported';
 export type RegisterResult = 'registered' | 'denied' | 'unavailable';
@@ -69,6 +72,10 @@ export async function registerForPushAsync({ prompt }: { prompt: boolean }): Pro
       await Notifications.setNotificationChannelAsync(REMINDER_CHANNEL_ID, {
         name: 'Event reminders',
         importance: AndroidImportance.HIGH,
+      });
+      await Notifications.setNotificationChannelAsync(UPDATES_CHANNEL_ID, {
+        name: 'Event changes and new events',
+        importance: AndroidImportance.DEFAULT,
       });
     }
 
