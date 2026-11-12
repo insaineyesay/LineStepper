@@ -16,6 +16,7 @@ import { useTabBarPadding } from '@/hooks/use-tab-bar-padding';
 import { useSession } from '@/lib/auth-context';
 import { Disclaimer } from '@/components/legal-links';
 import { ReportButton } from '@/components/report-button';
+import { kindLine } from '@/lib/event-kinds';
 import { useFlag } from '@/lib/flags';
 import { getPushStatusAsync, registerForPushAsync, type PushStatus } from '@/lib/push';
 import { isBackendConfigured } from '@/data/backend';
@@ -145,6 +146,11 @@ export default function EventDetailScreen() {
             <ThemedText type="smallBold">★ Featured event</ThemedText>
           )}
           <ThemedText type="subtitle">{event.title}</ThemedText>
+          {kindLine(event) && (
+            <ThemedText type="smallBold" themeColor="textSecondary">
+              {kindLine(event)}
+            </ThemedText>
+          )}
           {event.flyer_url && <Flyer uri={event.flyer_url} />}
 
           <ThemedView type="backgroundElement" style={styles.card}>

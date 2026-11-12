@@ -21,6 +21,11 @@ Add a line under "Unreleased" in the same pull request as the change.
   failures are retried 5 times. Android gets a separate "Event changes and new
   events" channel. Nothing writes to the queue yet (change notices and
   new-event alerts come next). Local database tests: `supabase/tests/run.sh`.
+- Event type (class, social, workshop, competition, festival) and skill level
+  (all levels, beginner, intermediate, advanced). Chosen on the event form
+  (type is required for new events), shown on event pages and list cards, and
+  filterable on Events under "Type & level". An "All levels" event shows under
+  every level filter.
 - "How LineUp2Step works" card on Events: the $0.99 app purchase covers a
   profile, finding events and connecting; each post is $0.99 (noted as free
   while paid posting is off). Links to a new FAQ page (`/faq`), also linked
