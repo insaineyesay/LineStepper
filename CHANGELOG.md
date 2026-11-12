@@ -14,6 +14,10 @@ Add a line under "Unreleased" in the same pull request as the change.
 ## [Unreleased]
 
 ### Added
+- "How LineUp2Step works" card on Events: the $0.99 app purchase covers a
+  profile, finding events and connecting; each post is $0.99 (noted as free
+  while paid posting is off). Links to a new FAQ page (`/faq`), also linked
+  from the bottom of Profile. "Got it" hides the card on that device.
 - Terms of Service and Privacy Policy pages (`/legal/terms`, `/legal/privacy`),
   readable without signing in, linked from the sign-in card and the bottom of
   Profile. Disclaimers at the foot of every event and crew page. Draft text
